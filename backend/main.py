@@ -9,12 +9,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from typing import List
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from models import Base, Survey, Response
+from models import Base, Survey, Response, Image
 from database import get_db
 from schemas import SurveyCreate, ResponseCreate
 import csv
 from email.mime.text import MIMEText
 import smtplib
+import base64
+from sqlalchemy.orm import joinedload  # Import for eager loading
 
 app = FastAPI()
 
@@ -45,7 +47,7 @@ def send_email(email: str, text: str):
 
     with smtplib.SMTP("smtp.gmail.com", 587) as server:
         server.starttls()
-        server.login("trisight.game@gmail.com", os.getenv("EMAIL_PASSWORD"))
+        server.login("stst.surveys@gmail.com", os.getenv("EMAIL_PASSWORD"))
         server.send_message(msg)
 
 
@@ -59,7 +61,8 @@ async def upload_survey(
 ):
     if password != os.getenv("ADMIN_PASSWORD"):
         raise HTTPException(status_code=403, detail="Invalid password")
-    # Read CSV file
+
+    # Read CSV file and parse questions
     content = await csv_file.read()
     decoded = content.decode("utf-8").splitlines()
     reader = csv.DictReader(decoded)
@@ -68,9 +71,7 @@ async def upload_survey(
         question = {
             "text": row["question"],
             "type": row["answer_type"],
-            # Additional parsing based on question type
         }
-        # Handle options or image names
         if question["type"] == "MultipleChoice":
             question["options"] = [
                 row["option1"],
@@ -83,27 +84,54 @@ async def upload_survey(
         elif question["type"] == "LikertScale":
             question["scale"] = int(row["scale_points"])
         questions.append(question)
-    # Save images
-    if images:
-        image_dir = "images"
-        os.makedirs(image_dir, exist_ok=True)
-        for image in images:
-            contents = await image.read()
-            with open(f"{image_dir}/{image.filename}", "wb") as f:
-                f.write(contents)
-    # Save survey to database
+
+    # Create survey entry
     survey = Survey(name=name, questions=questions)
     db.add(survey)
     db.commit()
-    return {"message": "Survey uploaded successfully"}
+    db.refresh(survey)  # Refresh to get the survey ID
+
+    # Save each image with a UUID
+    if images:
+        for image in images:
+            image_data = await image.read()
+            image_record = Image(
+                survey_id=survey.id,
+                image_data=image_data,
+                image_name=image.filename,  # Save original name or label if needed
+            )
+            db.add(image_record)
+        db.commit()
+
+    return {"message": "Survey with images uploaded successfully"}
 
 
 @app.get("/api/survey/{name}")
 async def get_survey(name: str, db=Depends(get_db)):
-    survey = db.query(Survey).filter(Survey.name == name).first()
+    survey = (
+        db.query(Survey)
+        .options(joinedload(Survey.images))
+        .filter(Survey.name == name)
+        .first()
+    )
     if not survey:
         raise HTTPException(status_code=404, detail="Survey not found")
-    return {"name": survey.name, "questions": survey.questions}
+
+    # Convert each image's binary data to base64
+    survey_data = {
+        "name": survey.name,
+        "questions": survey.questions,
+        "images": [
+            {
+                "id": str(image.id),  # UUID as string
+                "name": image.image_name,
+                "data": base64.b64encode(image.image_data).decode("utf-8"),
+            }
+            for image in survey.images
+        ],
+    }
+
+    return survey_data
 
 
 @app.get("/api/surveys")
