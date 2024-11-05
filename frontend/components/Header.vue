@@ -6,8 +6,8 @@
       </NuxtLink>
     </div>
     <div class="nav-links">
-      <UButton to="/" variant="text" color="primary">Startseite</UButton>
-      <UButton to="/surveys" variant="text" color="primary">Umfragen</UButton>
+      <UButton to="/" variant="link" color="black">Startseite</UButton>
+      <UButton to="/surveys" variant="link" color="black">Umfragen</UButton>
       <UDropdown :items="items" :popper="{ placement: 'bottom-start' }" class="admin-dropdown">
         <UButton color="primary" label="Admin" trailing-icon="i-heroicons-chevron-down-20-solid" />
       </UDropdown>

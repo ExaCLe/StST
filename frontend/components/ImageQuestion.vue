@@ -4,50 +4,58 @@
     <div
       v-for="(image, index) in question.images"
       :key="index"
-      ref="imageContainer"
       @click="handleClick"
-      style="position: relative; display: inline-block;"
+      class="image-container"
     >
       <img :src="'data:image/png;base64,' + image.data" :alt="image.name" />
       <div
-        v-for="(coord, index) in coordinates"
-        :key="index"
+        v-for="(coord, coordIndex) in coordinates"
+        :key="coordIndex"
         :style="{
-          position: 'absolute',
-          top: coord.y + 'px',
-          left: coord.x + 'px',
-          width: '10px',
-          height: '10px',
-          backgroundColor: 'red',
-          borderRadius: '50%',
+          top: `${coord.y}px`,
+          left: `${coord.x}px`,
         }"
+        class="dot"
       ></div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 
-const props = defineProps(['question']);
+const props = defineProps({
+  question: Object,
+  initialAnswer: Array,
+});
+
 const emit = defineEmits(['answer']);
-
 const coordinates = ref([]);
 
+onMounted(() => {
+  coordinates.value = props.initialAnswer || [];
+});
+
 const handleClick = (event) => {
-  // Get the position of the image container
   const rect = event.currentTarget.getBoundingClientRect();
-  
-  // Calculate the click position relative to the image
   const x = event.clientX - rect.left;
   const y = event.clientY - rect.top;
-  
-  // Save the coordinates
-  coordinates.value.push({ x, y });
 
-  // Optionally emit the answer if you want to send the coordinates to the parent component
+  coordinates.value.push({ x, y });
   emit('answer', coordinates.value);
 };
-
-const imageContainer = ref(null);
 </script>
+
+<style scoped>
+.image-container {
+  position: relative;
+  display: inline-block;
+}
+.dot {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background-color: #e91e63;
+  border-radius: 50%;
+}
+</style>

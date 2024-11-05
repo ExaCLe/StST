@@ -1,44 +1,44 @@
 <template>
-    <div>
-      <p>{{ question.text }}</p>
-      <div>
-        <label
-          v-for="point in scalePoints"
-          :key="point"
-          :for="`likert-${point}`"
-        >
-          <input
-            type="radio"
-            :id="`likert-${point}`"
-            :value="point"
-            v-model="selectedPoint"
-          />
-          {{ point }}
-        </label>
-      </div>
-    </div>
-  </template>
-  
-  <script>
-  export default {
-    props: ['question'],
-    data() {
-      return {
-        selectedPoint: null,
-      };
-    },
-    computed: {
-      scalePoints() {
-        return this.question.scale === 5
-          ? [1, 2, 3, 4, 5]
-          : [1, 2, 3, 4, 5, 6, 7];
-      },
-    },
-    watch: {
-      selectedPoint(newVal) {
-        this.$emit('answer', newVal);
-      },
-    },
-  };
-  </script>
-  
+  <div class="question-container">
+    <p class="question-text">{{ question.text }}</p>
+    <URadioGroup v-model="selectedPoint" :options="options" inline/>
+  </div>
+</template>
+
+<script setup>
+import { ref, onMounted, watch } from 'vue';
+
+const props = defineProps({
+  question: Object,
+  initialAnswer: [Number, null],
+});
+
+const emit = defineEmits(['answer']);
+const selectedPoint = ref(null);
+
+onMounted(() => {
+  selectedPoint.value = props.initialAnswer || null;
+});
+
+watch(selectedPoint, (newVal) => {
+  emit('answer', newVal);
+});
+
+// Define options for the Likert scale based on the scale length in the question
+const options = props.question.scale === 5
+  ? [{ value: 1, label: '1' }, { value: 2, label: '2' }, { value: 3, label: '3' }, { value: 4, label: '4' }, { value: 5, label: '5' }]
+  : [{ value: 1, label: '1' }, { value: 2, label: '2' }, { value: 3, label: '3' }, { value: 4, label: '4' }, { value: 5, label: '5' }, { value: 6, label: '6' }, { value: 7, label: '7' }];
+</script>
+
+<style scoped>
+.question-text {
+  text-align: left;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+.question-container {
+  align-items: left;
+  display: flex;
+}
+</style>

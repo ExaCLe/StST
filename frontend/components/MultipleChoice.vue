@@ -1,31 +1,29 @@
 <template>
-    <div>
-      <p>{{ question.text }}</p>
-      <div v-for="(option, index) in question.options" :key="index">
-        <input
-          type="checkbox"
-          :id="`option-${index}`"
-          :value="option"
-          v-model="selectedOptions"
-        />
-        <label :for="`option-${index}`">{{ option }}</label>
-      </div>
+  <div>
+    <p>{{ question.text }}</p>
+    <div v-for="(option, index) in question.options" :key="index">
+      <UCheckbox :label="option" :value="option" v-model="selectedOptions" />
     </div>
-  </template>
-  
-  <script>
-  export default {
-    props: ['question'],
-    data() {
-      return {
-        selectedOptions: [],
-      };
-    },
-    watch: {
-      selectedOptions(newVal) {
-        this.$emit('answer', newVal);
-      },
-    },
-  };
-  </script>
-  
+  </div>
+</template>
+
+<script setup>
+import { ref, watch, onMounted } from 'vue';
+
+const props = defineProps({
+  question: Object,
+  initialAnswer: Array,
+});
+
+const emit = defineEmits(['answer']);
+const selectedOptions = ref([]);
+
+onMounted(() => {
+  console.log(props.initialAnswer);
+  selectedOptions.value = props.initialAnswer || [];
+});
+
+watch(selectedOptions, (newVal) => {
+  emit('answer', newVal);
+});
+</script>

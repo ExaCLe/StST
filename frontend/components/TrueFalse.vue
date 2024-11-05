@@ -1,39 +1,29 @@
 <template>
-    <div>
-      <p>{{ question.text }}</p>
-      <div>
-        <input
-          type="radio"
-          id="true"
-          value="True"
-          v-model="selectedOption"
-        />
-        <label for="true">True</label>
-  
-        <input
-          type="radio"
-          id="false"
-          value="False"
-          v-model="selectedOption"
-        />
-        <label for="false">False</label>
-      </div>
-    </div>
-  </template>
-  
-  <script>
-  export default {
-    props: ['question'],
-    data() {
-      return {
-        selectedOption: null,
-      };
-    },
-    watch: {
-      selectedOption(newVal) {
-        this.$emit('answer', newVal);
-      },
-    },
-  };
-  </script>
-  
+  <div>
+    <p>{{ question.text }}</p>
+    <URadioGroup v-model="selectedOption">
+      <URadio label="True" value="True" />
+      <URadio label="False" value="False" />
+    </URadioGroup>
+  </div>
+</template>
+
+<script setup>
+import { ref, onMounted, watch } from 'vue';
+
+const props = defineProps({
+  question: Object,
+  initialAnswer: String,
+});
+
+const emit = defineEmits(['answer']);
+const selectedOption = ref(null);
+
+onMounted(() => {
+  selectedOption.value = props.initialAnswer || null;
+});
+
+watch(selectedOption, (newVal) => {
+  emit('answer', newVal);
+});
+</script>

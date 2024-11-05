@@ -1,34 +1,31 @@
 <template>
   <UContainer class="survey-page">
-    <!-- Survey Title Aligned to the Left -->
+    <!-- Survey Title -->
     <h1 class="survey-title">{{ survey?.name || "Loading Survey..." }}</h1>
-    
+
     <UCard class="survey-card" elevated>
       <!-- NuxtUI Progress Bar -->
-      <UProgress
-        :value="progressPercentage"
-        color="success" 
-        class="progress-bar"
-      />
+      <UProgress :value="progressPercentage" color="green" class="progress-bar" />
 
       <!-- Display Current Question -->
       <div v-if="currentQuestion" class="question-container">
         <component
           :is="getComponent(currentQuestion.type)"
           :question="currentQuestion"
+          :initialAnswer="answers[currentIndex] || null" 
           @answer="updateAnswer(currentIndex, $event)"
         />
       </div>
 
       <!-- Navigation Buttons -->
       <div class="navigation-buttons">
-        <UButton v-if="currentIndex > 0" @click="prevQuestion" color="success" variant="outline" class="previous-button">
+        <UButton v-if="currentIndex > 0" @click="prevQuestion" variant="outline" class="previous-button">
           Previous
         </UButton>
-        <UButton v-if="!isLastQuestion" @click="nextQuestion" color="success" class="action-button">
+        <UButton v-if="!isLastQuestion" @click="nextQuestion" class="action-button">
           Next
         </UButton>
-        <UButton v-if="isLastQuestion" @click="submitSurvey" color="success" class="action-button">
+        <UButton v-if="isLastQuestion" @click="submitSurvey" class="action-button">
           Submit Survey
         </UButton>
       </div>
