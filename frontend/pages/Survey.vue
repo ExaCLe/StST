@@ -1,38 +1,58 @@
 <template>
-  <UContainer class="survey-page">
-    <!-- Survey Title -->
-    <h1 class="survey-title">{{ survey?.name || "Loading Survey..." }}</h1>
+  <div class="max-w-3xl mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-8 text-indigo-800">{{ survey?.name || "Loading Survey..." }}</h1>
+    
+    <div v-if="currentIndex < (survey?.questions?.length || 0)" class="space-y-8">
+      <!-- Add Progress Bar -->
+      <div class="w-full bg-gray-200 rounded-full h-2.5">
+        <div
+          class="bg-indigo-600 h-2.5 rounded-full transition-all duration-300 ease-in-out"
+          :style="{ width: `${progressPercentage}%` }"
+        ></div>
+      </div>
 
-    <UCard class="survey-card" elevated>
-      <!-- NuxtUI Progress Bar -->
-      <UProgress :value="progressPercentage" color="green" class="progress-bar" />
-
-      <!-- Display Current Question -->
-      <div v-if="currentQuestion" class="question-container">
+      <div class="bg-white rounded-lg shadow-md p-6">
         <component
-          :is="getComponent(currentQuestion.type)"
+          :is="getComponent(currentQuestion?.type)"
           :question="currentQuestion"
-          :initialAnswer="answers[currentIndex] || null" 
+          :initialAnswer="answers[currentIndex]"
           @answer="updateAnswer(currentIndex, $event)"
         />
       </div>
 
-      <!-- Navigation Buttons -->
-      <div class="navigation-buttons">
-        <UButton v-if="currentIndex > 0" @click="prevQuestion" variant="outline" class="previous-button">
+      <div class="flex justify-between">
+        <UButton
+          v-if="currentIndex > 0"
+          @click="prevQuestion"
+          :ui="{ rounded: 'rounded-full' }"
+          variant="ghost"
+          class="text-gray-700 hover:bg-gray-100"
+        >
           Previous
         </UButton>
-        <UButton v-if="!isLastQuestion" @click="nextQuestion" class="action-button">
-          Next
-        </UButton>
-        <UButton v-if="isLastQuestion" @click="submitSurvey" class="action-button">
-          Submit Survey
+        <UButton
+          @click="handleNextOrSubmit"
+          :ui="{ rounded: 'rounded-full' }"
+          color="indigo"
+          class="ml-auto"
+        >
+          {{ isLastQuestion ? 'Submit' : 'Next' }}
         </UButton>
       </div>
-    </UCard>
+    </div>
 
-    <p v-if="message">{{ message }}</p>
-  </UContainer>
+    <div v-else class="text-center">
+      <h2 class="text-2xl font-bold mb-4 text-indigo-800">Thank you for completing the survey!</h2>
+      <p class="text-gray-600 mb-8">{{ message || 'Your responses have been recorded.' }}</p>
+      <UButton
+        to="/"
+        :ui="{ rounded: 'rounded-full' }"
+        color="indigo"
+      >
+        Back to Surveys
+      </UButton>
+    </div>
+  </div>
 </template>
 
 <script setup>
@@ -71,7 +91,9 @@ const updateAnswer = (index, answer) => {
 };
 
 const nextQuestion = () => {
-  if (currentIndex.value < survey.value.questions.length - 1) currentIndex.value++;
+  if (survey.value && currentIndex.value < survey.value.questions.length - 1) {
+    currentIndex.value++;
+  }
 };
 
 const prevQuestion = () => {
@@ -95,6 +117,14 @@ const submitSurvey = async () => {
   } catch (error) {
     console.error(error);
     message.value = error.message || 'An error occurred';
+  }
+};
+
+const handleNextOrSubmit = () => {
+  if (isLastQuestion.value) {
+    submitSurvey();
+  } else {
+    nextQuestion();
   }
 };
 
@@ -124,54 +154,8 @@ onMounted(async () => {
 });
 
 // Calculate progress percentage starting from 0% and reaching 100% for the last question
-const progressPercentage = computed(() => ((currentIndex.value) / (survey.value?.questions?.length - 1 || 1)) * 100);
+const progressPercentage = computed(() => {
+  if (!survey.value?.questions?.length) return 0;
+  return Math.round((currentIndex.value / (survey.value.questions.length - 1)) * 100);
+});
 </script>
-
-<style scoped>
-.survey-page {
-  padding: 2rem;
-}
-
-.survey-title {
-  font-size: 2rem;
-  color: black;
-  text-align: left;
-  margin-bottom: 1rem;
-  font-weight: bold;
-}
-
-.survey-card {
-  padding: 2rem;
-  background-color: #e0f7fa;
-  color: #004d40;
-  border-radius: 10px;
-  text-align: center;
-}
-
-.navigation-buttons {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 1rem;
-}
-
-.progress-bar {
-  margin-bottom: 1rem;
-  color: #4caf50;  
-}
-
-.previous-button {
-  color:#4caf50;  
-  border-color: #4caf50;
-}
-
-/* Styling for Next and Submit Button */
-.action-button {
-  margin-left: auto;
-  padding: 0.75rem 1.5rem;
-  font-size: 1rem;
-  border-radius: 5px;
-  background-color: #4caf50; /* Green color to match progress bar */
-  color: white;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-</style>

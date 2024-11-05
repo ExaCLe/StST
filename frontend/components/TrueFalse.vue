@@ -1,10 +1,14 @@
 <template>
   <div>
-    <p>{{ question.text }}</p>
-    <URadioGroup v-model="selectedOption">
-      <URadio label="True" value="True" />
-      <URadio label="False" value="False" />
-    </URadioGroup>
+    <h2 class="text-xl font-semibold mb-4">{{ question.text }}</h2>
+    <URadioGroup
+      v-model="selectedOption"
+      :options="[
+        { label: 'True', value: 'True' },
+        { label: 'False', value: 'False' }
+      ]"
+      class="flex space-x-4"
+    />
   </div>
 </template>
 

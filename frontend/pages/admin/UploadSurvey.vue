@@ -1,100 +1,128 @@
 <template>
-  <UContainer class="upload-survey">
-    <UCard class="upload-card" elevated>
-      <h1>Umfrage Hochladen</h1>
-      <form @submit.prevent="uploadSurvey">
-        <div class="form-group">
-          <label for="name">Umfragename:</label>
-          <UInput v-model="name" type="text" required placeholder="Geben Sie den Namen der Umfrage ein" class="light-input" />
-        </div>
+  <UContainer>
+    <div class="max-w-2xl mx-auto">
+      <h1 class="text-3xl font-bold mb-8 text-indigo-800">Upload Survey</h1>
+      
+      <form @submit.prevent="uploadSurvey" class="space-y-6">
+        <UFormGroup label="Survey Name" class="block">
+          <UInput
+            v-model="name"
+            placeholder="Enter survey name"
+            required
+          />
+        </UFormGroup>
 
-        <div class="form-group">
-          <label for="csv">CSV Datei:</label>
-          <UInput type="file" @change="handleCSVUpload" accept=".csv" required class="light-input" />
-        </div>
+        <UFormGroup label="CSV File" class="block">
+          <UInput
+            type="file"
+            @change="handleCSVUpload"
+            accept=".csv"
+            required
+          />
+        </UFormGroup>
 
-        <div class="form-group">
-          <label for="images">Bilder:</label>
-          <UInput type="file" multiple @change="handleImageUpload" accept="image/*" class="light-input" />
-        </div>
+        <UFormGroup label="Image Files" class="block">
+          <UInput
+            type="file"
+            @change="handleImageUpload"
+            accept="image/*"
+            multiple
+          />
+        </UFormGroup>
 
-        <div class="form-group">
-          <label for="password">Passwort:</label>
-          <UInput v-model="password" type="password" required placeholder="Ihr Passwort" class="light-input" />
-        </div>
+        <UFormGroup label="Admin Password" class="block">
+          <UInput
+            v-model="password"
+            type="password"
+            placeholder="Enter password"
+            required
+          />
+        </UFormGroup>
 
-        <UButton type="submit" color="primary" size="large" elevated class="submit-button">
-          Umfrage Hochladen
+        <UButton
+          type="submit"
+          color="primary"
+          variant="solid"
+          class="w-full rounded-full"
+          :loading="isUploading"
+        >
+          Upload Survey
         </UButton>
       </form>
 
-      <UAlert v-if="message" :color="alertColor" elevated class="response-alert">
+      <UAlert
+        v-if="message"
+        :color="alertColor"
+        class="mt-6"
+      >
         {{ message }}
       </UAlert>
-    </UCard>
+    </div>
   </UContainer>
 </template>
 
-<script>
-import { ref } from 'vue';
-const config = useRuntimeConfig();
+<script setup>
+import { ref } from 'vue'
+const config = useRuntimeConfig()
 
-export default {
-  setup() {
-    const name = ref('');
-    const csvFile = ref(null);
-    const images = ref([]);
-    const password = ref('');
-    const message = ref('');
-    const alertColor = ref(''); // Color for the alert: 'success' for green, 'error' for red
+const name = ref('')
+const password = ref('')
+const csvFile = ref(null)
+const images = ref([])
+const message = ref('')
+const alertColor = ref('')
+const isUploading = ref(false)
 
-    const handleCSVUpload = (event) => {
-      csvFile.value = event.target.files[0];
-    };
+const handleCSVUpload = (files) => {
+  csvFile.value = files[0]
+}
 
-    const handleImageUpload = (event) => {
-      images.value = Array.from(event.target.files);
-    };
-
-    const uploadSurvey = async () => {
-      const formData = new FormData();
-      formData.append('name', name.value);
-      formData.append('password', password.value);
-      formData.append('csv_file', csvFile.value);
-      images.value.forEach((image) => {
-        formData.append('images', image);
-      });
-
-      try {
-        const response = await fetch(`${config.public.backendUrl}/api/upload-survey`, {
-          method: 'POST',
-          body: formData,
-        });
-        const data = await response.json();
-        if (!response.ok) {
-          throw new Error(data.detail || 'Ein Fehler ist aufgetreten');
-        }
-        message.value = data.message || 'Umfrage erfolgreich hochgeladen';
-        alertColor.value = 'success'; // Green alert for success
-      } catch (error) {
-        message.value = error.message || 'Ein Fehler ist aufgetreten';
-        alertColor.value = 'error'; // Red alert for failure
-      }
-    };
-
-    return {
-      name,
-      csvFile,
-      images,
-      password,
-      message,
-      alertColor,
-      handleCSVUpload,
-      handleImageUpload,
-      uploadSurvey,
-    };
-  },
+const handleImageUpload = (files) => {
+  images.value = Array.from(files);
 };
+
+const uploadSurvey = async () => {
+  try {
+    // Validate required fields
+    if (!name.value || !password.value || !csvFile.value) {
+      throw new Error('Name, password and CSV file are required')
+    }
+
+    isUploading.value = true
+    const formData = new FormData()
+    
+    // Add required fields
+    formData.append('name', name.value)
+    formData.append('password', password.value)
+    formData.append('csv_file', csvFile.value)
+    images.value.forEach((image) => {
+        formData.append('images', image);
+    });
+
+    const response = await fetch(`${config.public.backendUrl}/api/upload-survey`, {
+      method: 'POST',
+      body: formData,
+    })
+    
+    const data = await response.json()
+    if (!response.ok) throw new Error(data.detail || 'An error occurred')
+    
+    message.value = data.message || 'Survey uploaded successfully'
+    alertColor.value = 'green'
+    
+    // Reset form after success
+    name.value = ''
+    password.value = ''
+    csvFile.value = null
+    images.value = []
+    
+  } catch (error) {
+    message.value = error.message || 'An error occurred'
+    alertColor.value = 'red'
+  } finally {
+    isUploading.value = false
+  }
+}
 </script>
 
 <style scoped>

@@ -1,7 +1,9 @@
 <template>
   <div class="layout">
     <Header />
-    <NuxtPage />
+    <div class="mt-10">
+      <NuxtPage />
+    </div>
     <UNotifications />
   </div>
 </template>

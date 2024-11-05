@@ -1,7 +1,23 @@
 <template>
-  <div class="question-container">
-    <p class="question-text">{{ question.text }}</p>
-    <URadioGroup v-model="selectedPoint" :options="options" inline/>
+  <div>
+    <h2 class="text-xl font-semibold mb-4">{{ question.text }}</h2>
+    <div class="flex justify-between mb-2">
+      <div class="flex justify-between w-full">
+        <label v-for="option in options" :key="option.value" class="flex flex-col items-center">
+          <input
+            type="radio"
+            :value="option.value"
+            v-model="selectedPoint"
+            class="form-radio text-indigo-600"
+          />
+          <span>{{ option.label }}</span>
+        </label>
+      </div>
+    </div>
+    <div class="flex justify-between text-sm text-gray-600">
+      <span>Strongly Disagree</span>
+      <span>Strongly Agree</span>
+    </div>
   </div>
 </template>
 

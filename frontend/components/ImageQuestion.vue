@@ -1,13 +1,15 @@
 <template>
   <div>
-    <p>{{ question.text }}</p>
-    <div
-      v-for="(image, index) in question.images"
-      :key="index"
-      @click="handleClick"
-      class="image-container"
-    >
-      <img :src="'data:image/png;base64,' + image.data" :alt="image.name" />
+    <h2 class="text-xl font-semibold mb-4">{{ question.text }}</h2>
+    <div class="relative inline-block">
+      <img
+        v-for="(image, index) in question.images"
+        :key="index"
+        :src="'data:image/png;base64,' + image.data"
+        :alt="image.name"
+        @click="handleClick"
+        class="max-w-full h-auto rounded-lg shadow-md"
+      />
       <div
         v-for="(coord, coordIndex) in coordinates"
         :key="coordIndex"
@@ -15,9 +17,17 @@
           top: `${coord.y}px`,
           left: `${coord.x}px`,
         }"
-        class="dot"
+        class="absolute w-4 h-4 bg-indigo-600 rounded-full transform -translate-x-1/2 -translate-y-1/2"
       ></div>
     </div>
+    <UButton
+      @click="coordinates = []"
+      color="red"
+      :ui="{ rounded: 'rounded-full' }"
+      class="mt-4"
+    >
+      Clear Markers
+    </UButton>
   </div>
 </template>
 

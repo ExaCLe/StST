@@ -1,30 +1,48 @@
 <template>
-  <UContainer class="available-surveys">
-    <h1>Verfügbare Umfragen</h1>
-    <UAlert v-if="message" :color="alertColor" elevated class="response-alert">
-      {{ message }}
-    </UAlert>
-    <ul v-if="surveys.length > 0">
-      <li v-for="survey in surveys" :key="survey">
-        <NuxtLink
-          :to="{ path: '/survey', query: { name: survey } }"
-          class="survey-link"
-        >
-          {{ survey }}
-        </NuxtLink>
-      </li>
-    </ul>
+  <UContainer>
+    <h1 class="text-3xl font-bold mb-8 text-indigo-600">Verfügbare Umfragen</h1>
+    
+    <!-- Removed UAlert component -->
+
+    <div v-if="surveys.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <UCard
+        v-for="survey in formattedSurveys"
+        :key="survey.id"
+        class="hover:shadow-lg transition duration-300"
+      >
+        <template #header>
+          <h2 class="text-xl font-semibold text-indigo-600">{{ survey.name }}</h2>
+        </template>
+        
+        <p class="text-gray-600 mb-4">Nehmen Sie an dieser Umfrage teil</p>
+        
+        <template #footer>
+          <NuxtLink
+            :to="{ path: '/survey', query: { name: survey.name } }"
+            class="inline-block bg-indigo-600 text-white py-2 px-4 rounded-full hover:bg-indigo-700 transition duration-300"
+          >
+            Umfrage starten
+          </NuxtLink>
+        </template>
+      </UCard>
+    </div>
   </UContainer>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRuntimeConfig } from '#app';
 
 const config = useRuntimeConfig();
 const surveys = ref([]);
-const message = ref(''); // Message for success or failure
-const alertColor = ref(''); // Alert color based on success or error
+const toast = useToast();
+
+const formattedSurveys = computed(() => {
+  return surveys.value.map((name, index) => ({
+    id: index + 1,
+    name: name
+  }));
+});
 
 onMounted(async () => {
   try {
@@ -32,15 +50,18 @@ onMounted(async () => {
     surveys.value = response.surveys;
 
     if (surveys.value.length === 0) {
-      message.value = 'Keine Umfragen verfügbar'; // Message if no surveys are found
-      alertColor.value = 'error';
-    } else {
-      message.value = 'Umfragen erfolgreich geladen';
-      alertColor.value = 'success';
+      toast.add({
+        title: 'Keine Umfragen verfügbar',
+        description: 'Es sind derzeit keine Umfragen verfügbar.',
+        color: 'yellow'
+      });
     }
   } catch (error) {
-    message.value = 'Fehler beim Laden der Umfragen';
-    alertColor.value = 'error';
+    toast.add({
+      title: 'Fehler beim Laden der Umfragen',
+      description: 'Es ist ein Fehler beim Laden der Umfragen aufgetreten.',
+      color: 'primary'
+    })
     console.error(error);
   }
 });

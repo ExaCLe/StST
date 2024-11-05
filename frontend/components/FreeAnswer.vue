@@ -1,7 +1,12 @@
 <template>
   <div>
-    <p>{{ question.text }}</p>
-    <UTextarea v-model="answer" @input="emitAnswer" placeholder="Type your answer..." />
+    <h2 class="text-xl font-semibold mb-4">{{ question.text }}</h2>
+    <UTextarea
+      v-model="answer"
+      :rows="4"
+      placeholder="Enter your answer here..."
+      :ui="{ color: 'indigo' }"
+    />
   </div>
 </template>
 
