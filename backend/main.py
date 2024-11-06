@@ -18,6 +18,8 @@ import smtplib
 import base64
 from sqlalchemy.orm import joinedload  # Import for eager loading
 
+from survey_processing import create_results_package
+
 app = FastAPI()
 
 # CORS configuration
@@ -155,20 +157,19 @@ async def save_response(name: str, response: ResponseCreate, db=Depends(get_db))
 @app.post("/api/request-results")
 async def request_results(
     survey_name: str = Form(...),
-    email: str = Form(...),
     password: str = Form(...),
     db=Depends(get_db),
 ):
     if password != os.getenv("ADMIN_PASSWORD"):
         raise HTTPException(status_code=403, detail="Invalid password")
+
+    print(f"\nProcessing results request for survey: {survey_name}")
+
     survey = db.query(Survey).filter(Survey.name == survey_name).first()
     if not survey:
         raise HTTPException(status_code=404, detail="Survey not found")
+
     responses = db.query(Response).filter(Response.survey_id == survey.id).all()
-    # Compile results
-    result_text = f"Results for survey: {survey_name}\n\n"
-    for i, response in enumerate(responses, 1):
-        result_text += f"Response {i}:\n{response.answers}\n\n"
-    # Send email
-    send_email(email, result_text)
-    return {"message": "Results sent successfully"}
+    images = db.query(Image).filter(Image.survey_id == survey.id).all()
+
+    return create_results_package(survey, responses, images)
