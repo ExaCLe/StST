@@ -1,5 +1,5 @@
 <template>
-  <div class="max-w-2xl mx-auto">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"> <!-- Changed from max-w-2xl -->
     <h1 class="text-3xl font-bold mb-8 text-indigo-800">Request Survey Results</h1>
     <form @submit.prevent="requestResults" class="space-y-6">
       <div>
@@ -40,7 +40,7 @@
       {{ message }}
     </div>
     <div v-if="results" class="mt-8 space-y-4">
-      <div class="flex space-x-4">
+      <div class="flex space-x-4 flex-wrap gap-y-2">
         <button
           @click="downloadZip"
           v-if="results.has_images"
@@ -54,10 +54,23 @@
         >
           {{ showTextResults ? 'Hide' : 'Show' }} Text Results
         </button>
+        <button
+          @click="showHtmlResults = !showHtmlResults"
+          class="bg-purple-600 text-white py-2 px-4 rounded-full hover:bg-purple-700 transition duration-300"
+        >
+          {{ showHtmlResults ? 'Hide' : 'Show' }} HTML Results
+        </button>
       </div>
       
       <div v-if="showTextResults" class="mt-4 p-4 bg-gray-100 rounded-lg whitespace-pre-wrap font-mono">
         {{ results.text }}
+      </div>
+
+      <div v-if="showHtmlResults" class="mt-4 w-full">
+        <div 
+          class="bg-white rounded-lg shadow-md p-8 max-w-none overflow-x-auto min-w-full"
+          v-html="results.html"
+        ></div>
       </div>
     </div>
   </div>
@@ -76,6 +89,7 @@ const isLoading = ref(false);
 const loadingSurveys = ref(true);
 const results = ref(null);
 const showTextResults = ref(false);
+const showHtmlResults = ref(false);
 
 const fetchSurveys = async () => {
   try {
@@ -182,3 +196,33 @@ const requestResults = async () => {
   }
 };
 </script>
+
+<style scoped>
+/* Add these styles to ensure proper HTML rendering */
+:deep(h1) {
+  margin: 1rem 0;
+}
+:deep(h2) {
+  margin: 1rem 0;
+}
+:deep(h3) {
+  margin: 0.75rem 0;
+}
+:deep(.participant) {
+  break-inside: avoid;
+  max-width: 1400px; /* Added max-width */
+  margin-left: auto;
+  margin-right: auto;
+}
+:deep(img) {
+  display: block;
+  margin: 1rem auto;
+  max-width: 1200px; /* Increased from 800px */
+  width: 100%;
+}
+:deep(body) {
+  max-width: 1400px; /* Added max-width */
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>

@@ -31,6 +31,112 @@ def format_survey_results(survey, responses):
     return formatted_text
 
 
+def format_survey_results_html(survey, responses, processed_images):
+    html = f"""
+    <html>
+    <head>
+        <style>
+            body {{ 
+                font-family: Arial, sans-serif; 
+                margin: 2rem;
+                line-height: 1.5;
+                color: #1f2937;
+            }}
+            h1 {{ 
+                color: #4f46e5;
+                font-size: 2.25rem;
+                font-weight: bold;
+                margin-bottom: 1rem;
+            }}
+            h2 {{ 
+                color: #374151;
+                font-size: 1.8rem;
+                font-weight: 600;
+                margin-top: 2rem;
+                margin-bottom: 1rem;
+            }}
+            h3 {{ 
+                color: #4b5563;
+                font-size: 1.25rem;
+                font-weight: 600;
+                margin-top: 1.5rem;
+                margin-bottom: 0.75rem;
+            }}
+            .participant {{ 
+                margin: 2.5rem 0; 
+                padding: 2rem;
+                border: 1px solid #e5e7eb;
+                border-radius: 0.75rem;
+                background-color: #ffffff;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            }}
+            .question {{ 
+                margin: 1.5rem 0;
+                padding-left: 1rem;
+                border-left: 4px solid #e5e7eb;
+            }}
+            .answer {{ 
+                margin: 0.75rem 0 1.5rem 1.5rem;
+                color: #374151;
+                font-size: 1.1rem;
+            }}
+            .image-response {{ 
+                margin: 1.5rem 0;
+                text-align: center;
+            }}
+            img {{ 
+                max-width: 800px;
+                width: 100%;
+                height: auto;
+                border-radius: 0.5rem;
+                margin: 1rem auto;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            }}
+        </style>
+    </head>
+    <body>
+        <h1>Survey Results: {survey.name}</h1>
+        <p>Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
+    """
+
+    for i, response in enumerate(responses, 1):
+        html += f'<div class="participant"><h2>Participant {i}</h2>'
+
+        for question in survey.questions:
+            q_id = str(survey.questions.index(question))
+            answer = response.answers.get(q_id)
+
+            html += f'<div class="question">'
+            html += f'<h3>Question {int(q_id) + 1}: {question["text"]}</h3>'
+
+            if question["type"] == "ImageQuestion":
+                # Find corresponding processed image
+                image_filename = f"participant_{i}_question_{int(q_id) + 1}.jpg"
+                image_data = next(
+                    (
+                        img["data"]
+                        for img in processed_images
+                        if img["filename"] == image_filename
+                    ),
+                    None,
+                )
+
+                if image_data:
+                    b64_image = base64.b64encode(image_data).decode("utf-8")
+                    html += f'<div class="image-response">'
+                    html += f'<img src="data:image/jpeg;base64,{b64_image}" alt="Response image" />'
+                    html += "</div>"
+            else:
+                html += f'<div class="answer">{answer}</div>'
+
+            html += "</div>"
+
+        html += "</div>"
+
+    html += "</body></html>"
+    return html
+
+
 def process_image_responses(survey, responses, image_data):
     print(f"Processing images for survey: {survey.name}")
     print(f"Number of responses: {len(responses)}")
@@ -85,18 +191,20 @@ def create_results_package(survey, responses, images):
     print("\nCreating results package")
     result_text = format_survey_results(survey, responses)
     image_files = process_image_responses(survey, responses, images)
+    result_html = format_survey_results_html(survey, responses, image_files)
 
     zip_buffer = io.BytesIO()
     with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
         zip_file.writestr("results.txt", result_text)
+        zip_file.writestr("results.html", result_html)
         for img in image_files:
             zip_file.writestr(img["filename"], img["data"])
 
     has_images = len(image_files) > 0
-    print(f"Package created with {len(image_files)} images, has_images={has_images}")
 
     return {
         "text": result_text,
+        "html": result_html,
         "zip_data": base64.b64encode(zip_buffer.getvalue()).decode("utf-8"),
         "has_images": has_images,
     }
