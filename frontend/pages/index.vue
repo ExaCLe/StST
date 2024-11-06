@@ -1,5 +1,5 @@
 <template>
-  <UContainer class="text-center py-8">
+  <div class="text-center py-8">
     <h1 class="text-4xl font-bold mb-8 text-indigo-800">
       Welcome to St-Surveys
     </h1>
@@ -8,35 +8,29 @@
       Explore our surveys and contribute to valuable research!
     </p>
     
-    <div class="space-y-4 max-w-xs mx-auto">
-      <UButton
+    <div class="space-y-4">
+      <NuxtLink
         to="/surveys"
-        color="indigo"
-        variant="solid"
-        class="w-full rounded-full transition duration-300 hover:opacity-90"
+        class="block w-64 mx-auto bg-indigo-600 text-white py-2 px-4 rounded-full hover:bg-indigo-700 transition duration-300"
       >
         View Available Surveys
-      </UButton>
+      </NuxtLink>
 
-      <UButton
+      <NuxtLink
         to="/admin/UploadSurvey"
-        color="purple"
-        variant="solid"
-        class="w-full rounded-full transition duration-300 hover:opacity-90"
+        class="block w-64 mx-auto bg-purple-600 text-white py-2 px-4 rounded-full hover:bg-purple-700 transition duration-300"
       >
         Upload a Survey (Admin)
-      </UButton>
+      </NuxtLink>
 
-      <UButton
+      <NuxtLink
         to="/admin/RequestResults"
-        color="green"
-        variant="solid"
-        class="w-full rounded-full transition duration-300 hover:opacity-90"
+        class="block w-64 mx-auto bg-green-600 text-white py-2 px-4 rounded-full hover:bg-green-700 transition duration-300"
       >
         Request Results (Admin)
-      </UButton>
+      </NuxtLink>
     </div>
-  </UContainer>
+  </div>
 </template>
 
 <script setup>

@@ -1,14 +1,26 @@
 <template>
   <div>
     <h2 class="text-xl font-semibold mb-4">{{ question.text }}</h2>
-    <URadioGroup
-      v-model="selectedOption"
-      :options="[
-        { label: 'True', value: 'True' },
-        { label: 'False', value: 'False' }
-      ]"
-      class="flex space-x-4"
-    />
+    <div class="flex space-x-4">
+      <label class="inline-flex items-center">
+        <input 
+          type="radio" 
+          :value="true" 
+          v-model="localAnswer" 
+          class="form-radio text-indigo-600"
+        >
+        <span class="ml-2">True</span>
+      </label>
+      <label class="inline-flex items-center">
+        <input 
+          type="radio" 
+          :value="false" 
+          v-model="localAnswer" 
+          class="form-radio text-indigo-600"
+        >
+        <span class="ml-2">False</span>
+      </label>
+    </div>
   </div>
 </template>
 
@@ -21,13 +33,17 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['answer']);
-const selectedOption = ref(null);
+const localAnswer = ref(null);
 
 onMounted(() => {
-  selectedOption.value = props.initialAnswer || null;
+  // Convert string 'True'/'False' to boolean
+  if (props.initialAnswer) {
+    localAnswer.value = props.initialAnswer === 'True';
+  }
 });
 
-watch(selectedOption, (newVal) => {
-  emit('answer', newVal);
+watch(localAnswer, (newVal) => {
+  // Convert boolean back to string for emit
+  emit('answer', newVal ? 'True' : 'False');
 });
 </script>

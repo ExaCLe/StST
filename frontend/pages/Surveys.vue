@@ -1,32 +1,26 @@
 <template>
-  <UContainer>
-    <h1 class="text-3xl font-bold mb-8 text-indigo-600">Verfügbare Umfragen</h1>
-    
-    <!-- Removed UAlert component -->
+  <div class="container mx-auto px-4 py-8">
+    <p class="text-3xl font-bold mb-8 text-indigo-800">Verfügbare Umfragen</p>
 
     <div v-if="surveys.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <UCard
-        v-for="survey in formattedSurveys"
+      <div 
+        v-for="survey in formattedSurveys" 
         :key="survey.id"
-        class="hover:shadow-lg transition duration-300"
+        class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition duration-300"
       >
-        <template #header>
-          <h2 class="text-xl font-semibold text-indigo-600">{{ survey.name }}</h2>
-        </template>
-        
-        <p class="text-gray-600 mb-4">Nehmen Sie an dieser Umfrage teil</p>
-        
-        <template #footer>
+        <div class="p-6">
+          <h2 class="text-xl font-semibold mb-2 text-indigo-600">{{ survey.name }}</h2>
+          <p class="text-gray-600 mb-4">Nehmen Sie an dieser Umfrage teil</p>
           <NuxtLink
             :to="{ path: '/survey', query: { name: survey.name } }"
             class="inline-block bg-indigo-600 text-white py-2 px-4 rounded-full hover:bg-indigo-700 transition duration-300"
           >
             Umfrage starten
           </NuxtLink>
-        </template>
-      </UCard>
+        </div>
+      </div>
     </div>
-  </UContainer>
+  </div>
 </template>
 
 <script setup>

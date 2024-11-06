@@ -1,103 +1,109 @@
 <template>
-  <UContainer>
-    <div class="max-w-2xl mx-auto">
-      <h1 class="text-3xl font-bold mb-8 text-indigo-800">Upload Survey</h1>
-      
-      <form @submit.prevent="uploadSurvey" class="space-y-6">
-        <UFormGroup label="Survey Name" class="block">
-          <UInput
-            v-model="name"
-            placeholder="Enter survey name"
-            required
-          />
-        </UFormGroup>
+  <div class="max-w-2xl mx-auto">
+    <h1 class="text-3xl font-bold mb-8 text-indigo-800">Upload Survey</h1>
+    
+    <form @submit.prevent="uploadSurvey" class="space-y-6">
+      <div>
+        <label for="name" class="block text-sm font-medium text-gray-700">Survey Name</label>
+        <input
+          type="text"
+          id="name"
+          v-model="surveyName"
+          placeholder="Enter survey name"
+          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+          required
+        />
+      </div>
 
-        <UFormGroup label="CSV File" class="block">
-          <UInput
-            type="file"
-            @change="handleCSVUpload"
-            accept=".csv"
-            required
-          />
-        </UFormGroup>
+      <div>
+        <label for="csv" class="block text-sm font-medium text-gray-700">CSV File</label>
+        <input
+          type="file"
+          id="csv"
+          @change="handleCSVUpload"
+          accept=".csv"
+          class="mt-1 block w-full"
+          required
+        />
+      </div>
 
-        <UFormGroup label="Image Files" class="block">
-          <UInput
-            type="file"
-            @change="handleImageUpload"
-            accept="image/*"
-            multiple
-          />
-        </UFormGroup>
+      <div>
+        <label for="images" class="block text-sm font-medium text-gray-700">Image Files</label>
+        <input
+          type="file"
+          id="images"
+          @change="handleImageUpload"
+          accept="image/*"
+          multiple
+          class="mt-1 block w-full"
+        />
+      </div>
 
-        <UFormGroup label="Admin Password" class="block">
-          <UInput
-            v-model="password"
-            type="password"
-            placeholder="Enter password"
-            required
-          />
-        </UFormGroup>
+      <div>
+        <label for="password" class="block text-sm font-medium text-gray-700">Admin Password</label>
+        <input
+          type="password"
+          id="password"
+          v-model="adminPassword"
+          placeholder="Enter password"
+          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+          required
+        />
+      </div>
 
-        <UButton
-          type="submit"
-          color="primary"
-          variant="solid"
-          class="w-full rounded-full"
-          :loading="isUploading"
-        >
-          Upload Survey
-        </UButton>
-      </form>
-
-      <UAlert
-        v-if="message"
-        :color="alertColor"
-        class="mt-6"
+      <button
+        type="submit"
+        :disabled="isUploading"
+        class="w-full bg-indigo-600 text-white py-2 px-4 rounded-full hover:bg-indigo-700 transition duration-300 disabled:opacity-50"
       >
-        {{ message }}
-      </UAlert>
+        {{ isUploading ? 'Uploading...' : 'Upload Survey' }}
+      </button>
+    </form>
+
+    <div 
+      v-if="message" 
+      :class="`mt-6 p-4 rounded-md ${alertColor === 'red' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`"
+    >
+      {{ message }}
     </div>
-  </UContainer>
+  </div>
 </template>
 
 <script setup>
 import { ref } from 'vue'
 const config = useRuntimeConfig()
 
-const name = ref('')
-const password = ref('')
+const surveyName = ref('')
+const adminPassword = ref('')
 const csvFile = ref(null)
-const images = ref([])
+const imageFiles = ref([])
 const message = ref('')
 const alertColor = ref('')
 const isUploading = ref(false)
 
-const handleCSVUpload = (files) => {
-  csvFile.value = files[0]
+const handleCSVUpload = (event) => {
+  csvFile.value = event.target.files[0]
 }
 
-const handleImageUpload = (files) => {
-  images.value = Array.from(files);
-};
+const handleImageUpload = (event) => {
+  imageFiles.value = Array.from(event.target.files)
+}
 
 const uploadSurvey = async () => {
   try {
-    // Validate required fields
-    if (!name.value || !password.value || !csvFile.value) {
+    if (!surveyName.value || !adminPassword.value || !csvFile.value) {
       throw new Error('Name, password and CSV file are required')
     }
 
     isUploading.value = true
     const formData = new FormData()
     
-    // Add required fields
-    formData.append('name', name.value)
-    formData.append('password', password.value)
+    formData.append('name', surveyName.value)
+    formData.append('password', adminPassword.value)
     formData.append('csv_file', csvFile.value)
-    images.value.forEach((image) => {
-        formData.append('images', image);
-    });
+    imageFiles.value.forEach((image) => {
+        formData.append('images', image)
+    })
 
     const response = await fetch(`${config.public.backendUrl}/api/upload-survey`, {
       method: 'POST',
@@ -110,88 +116,17 @@ const uploadSurvey = async () => {
     message.value = data.message || 'Survey uploaded successfully'
     alertColor.value = 'green'
     
-    // Reset form after success
-    name.value = ''
-    password.value = ''
+    // Reset form
+    surveyName.value = ''
+    adminPassword.value = ''
     csvFile.value = null
-    images.value = []
+    imageFiles.value = []
     
   } catch (error) {
-    message.value = error.message || 'An error occurred'
+    message.value = "Fehler beim Hochladen der Umfrage: " + error.message
     alertColor.value = 'red'
   } finally {
     isUploading.value = false
   }
 }
 </script>
-
-<style scoped>
-.upload-survey {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 2rem;
-  font-family: Arial, sans-serif;
-}
-
-.upload-card {
-  width: 100%;
-  max-width: 600px;
-  padding: 2rem;
-  background-color: #f9f9f9;
-  border-radius: 10px;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-  text-align: center;
-}
-
-.upload-card h1 {
-  font-size: 1.8rem;
-  margin-bottom: 1.5rem;
-  color: #4a90e2;
-}
-
-.form-group {
-  margin-bottom: 1.2rem;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 0.5rem;
-  color: #333;
-  font-weight: bold;
-}
-
-.light-input {
-  background-color: #ffffff !important;
-  color: #333 !important;
-  border: 1px solid #ccc !important;
-  border-radius: 5px;
-}
-
-.submit-button {
-  width: 100%;
-  padding: 1rem;
-  font-size: 1.1rem;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-}
-
-.response-alert {
-  margin-top: 1.5rem;
-  font-size: 1rem;
-  padding: 1rem;
-  border-radius: 5px;
-  color: #ffffff;
-  background-color: var(--alert-background-color);
-}
-
-.response-alert[alert-color="success"] {
-  background-color: #4caf50; /* Solid green for success */
-}
-
-.response-alert[alert-color="error"] {
-  background-color: #f44336; /* Solid red for failure */
-}
-</style>

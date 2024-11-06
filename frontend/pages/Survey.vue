@@ -1,17 +1,17 @@
 <template>
-  <div class="max-w-3xl mx-auto px-4 py-8">
+  <div class="max-w-3xl mx-auto">
     <h1 class="text-3xl font-bold mb-8 text-indigo-800">{{ survey?.name || "Loading Survey..." }}</h1>
     
-    <div v-if="currentIndex < (survey?.questions?.length || 0)" class="space-y-8">
-      <!-- Add Progress Bar -->
-      <div class="w-full bg-gray-200 rounded-full h-2.5">
+    <div v-if="currentIndex < (survey?.questions?.length || 0)">
+      <!-- Progress Bar -->
+      <div class="w-full bg-gray-200 rounded-full h-2.5 mb-8">
         <div
           class="bg-indigo-600 h-2.5 rounded-full transition-all duration-300 ease-in-out"
           :style="{ width: `${progressPercentage}%` }"
         ></div>
       </div>
 
-      <div class="bg-white rounded-lg shadow-md p-6">
+      <div class="mb-8 bg-white rounded-lg shadow-md p-6">
         <component
           :is="getComponent(currentQuestion?.type)"
           :question="currentQuestion"
@@ -21,36 +21,33 @@
       </div>
 
       <div class="flex justify-between">
-        <UButton
+        <button
           v-if="currentIndex > 0"
           @click="prevQuestion"
-          :ui="{ rounded: 'rounded-full' }"
-          variant="ghost"
-          class="text-gray-700 hover:bg-gray-100"
+          :disabled="currentIndex === 0"
+          class="bg-gray-300 text-gray-700 hover:bg-gray-400 transition duration-300 disabled:opacity-50 py-2 px-4 rounded-full"
         >
           Previous
-        </UButton>
-        <UButton
+        </button>
+        <button
           @click="handleNextOrSubmit"
-          :ui="{ rounded: 'rounded-full' }"
-          color="indigo"
-          class="ml-auto"
+          class="bg-indigo-600 text-white hover:bg-indigo-700 transition duration-300 py-2 px-4 rounded-full"
+          :class="{ 'ml-auto': currentIndex === 0 }"
         >
           {{ isLastQuestion ? 'Submit' : 'Next' }}
-        </UButton>
+        </button>
       </div>
     </div>
 
     <div v-else class="text-center">
       <h2 class="text-2xl font-bold mb-4 text-indigo-800">Thank you for completing the survey!</h2>
       <p class="text-gray-600 mb-8">{{ message || 'Your responses have been recorded.' }}</p>
-      <UButton
-        to="/"
-        :ui="{ rounded: 'rounded-full' }"
-        color="indigo"
+      <NuxtLink
+        to="/surveys"
+        class="inline-block bg-indigo-600 text-white py-2 px-4 rounded-full hover:bg-indigo-700 transition duration-300"
       >
         Back to Surveys
-      </UButton>
+      </NuxtLink>
     </div>
   </div>
 </template>

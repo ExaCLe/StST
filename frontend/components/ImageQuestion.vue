@@ -3,31 +3,27 @@
     <h2 class="text-xl font-semibold mb-4">{{ question.text }}</h2>
     <div class="relative inline-block">
       <img
-        v-for="(image, index) in question.images"
-        :key="index"
-        :src="'data:image/png;base64,' + image.data"
-        :alt="image.name"
+        :src="'data:image/png;base64,' + question.images[0].data"
+        :alt="question.images[0].name"
         @click="handleClick"
         class="max-w-full h-auto rounded-lg shadow-md"
       />
       <div
-        v-for="(coord, coordIndex) in coordinates"
-        :key="coordIndex"
+        v-for="(coord, index) in coordinates"
+        :key="index"
         :style="{
-          top: `${coord.y}px`,
           left: `${coord.x}px`,
+          top: `${coord.y}px`
         }"
-        class="absolute w-4 h-4 bg-indigo-600 rounded-full transform -translate-x-1/2 -translate-y-1/2"
+        class="absolute w-4 h-4 bg-red-500 rounded-full transform -translate-x-1/2 -translate-y-1/2"
       ></div>
     </div>
-    <UButton
+    <button
       @click="coordinates = []"
-      color="red"
-      :ui="{ rounded: 'rounded-full' }"
-      class="mt-4"
+      class="mt-4 bg-red-500 text-white py-2 px-4 rounded-full hover:bg-red-600 transition duration-300"
     >
       Clear Markers
-    </UButton>
+    </button>
   </div>
 </template>
 
@@ -57,15 +53,8 @@ const handleClick = (event) => {
 </script>
 
 <style scoped>
-.image-container {
+.relative {
   position: relative;
   display: inline-block;
-}
-.dot {
-  position: absolute;
-  width: 10px;
-  height: 10px;
-  background-color: #e91e63;
-  border-radius: 50%;
 }
 </style>

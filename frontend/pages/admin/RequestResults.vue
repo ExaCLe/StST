@@ -1,56 +1,54 @@
 <template>
-  <div class="max-w-2xl mx-auto p-6">
-    <h1 class="text-3xl font-bold mb-8 text-indigo-800">Ergebnisse der Umfrage anfordern</h1>
+  <div class="max-w-2xl mx-auto">
+    <h1 class="text-3xl font-bold mb-8 text-indigo-800">Request Survey Results</h1>
     <form @submit.prevent="requestResults" class="space-y-6">
       <div>
-        <UFormGroup label="Umfragename" class="block">
-          <USelect
-            v-model="selectedSurvey"
-            :options="surveys.map(name => ({ id: name, name: name }))"
-            option-attribute="name"
-            value-attribute="id"
-            required
-            class="w-full"
-            :loading="loadingSurveys"
-          />
-        </UFormGroup>
+        <label for="survey" class="block text-sm font-medium text-gray-700">Survey Name</label>
+        <select
+          id="survey"
+          v-model="selectedSurvey"
+          required
+          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+          :disabled="loadingSurveys"
+        >
+          <option value="" disabled>Select a survey</option>
+          <option v-for="survey in surveys" :key="survey" :value="survey">
+            {{ survey }}
+          </option>
+        </select>
       </div>
       <div>
-        <UFormGroup label="E-Mail Adresse" class="block">
-          <UInput
-            v-model="email"
-            type="email"
-            required
-            placeholder="Ihre E-Mail-Adresse"
-          />
-        </UFormGroup>
+        <label for="email" class="block text-sm font-medium text-gray-700">Email Address</label>
+        <input
+          id="email"
+          v-model="email"
+          type="email"
+          required
+          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+        />
       </div>
       <div>
-        <UFormGroup label="Passwort" class="block">
-          <UInput
-            v-model="password"
-            type="password"
-            required
-            placeholder="Ihr Passwort"
-          />
-        </UFormGroup>
+        <label for="password" class="block text-sm font-medium text-gray-700">Admin Password</label>
+        <input
+          id="password"
+          v-model="password"
+          type="password"
+          required
+          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+        />
       </div>
-      <UButton
+      <button
         type="submit"
-        color="primary"
-        variant="solid"
-        class="w-full bg-indigo-600 text-white py-2 px-4 rounded-full hover:bg-indigo-700 transition duration-300 text-center"
-        :loading="isLoading"
+        class="w-full bg-indigo-600 text-white py-2 px-4 rounded-full hover:bg-indigo-700 transition duration-300 disabled:opacity-50"
+        :disabled="isLoading"
       >
-        Ergebnisse Anfordern
-      </UButton>
+        <span v-if="isLoading">Loading...</span>
+        <span v-else>Request Results</span>
+      </button>
     </form>
-    <UAlert
-      v-if="message"
-      :type="messageType"
-      :text="message"
-      class="mt-4"
-    />
+    <div v-if="message" :class="`mt-4 p-4 rounded-md ${messageType === 'error' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`">
+      {{ message }}
+    </div>
   </div>
 </template>
 
