@@ -1,5 +1,6 @@
-from pydantic import BaseModel
-from typing import List, Any
+# schemas.py
+from pydantic import BaseModel, Field
+from typing import List, Any, Optional
 
 
 class SurveyCreate(BaseModel):
@@ -14,8 +15,10 @@ class ResponseCreate(BaseModel):
 class Question(BaseModel):
     text: str
     type: str
-    options: List[str] = []
-    image: str = None
+    options: Optional[List[str]] = []
+    image: Optional[str] = None  # Base64 image data
+    scale_points: Optional[int] = None
+    imageName: Optional[str] = None  # Use imageName consistently
 
 
 class SurveyDirectCreate(BaseModel):

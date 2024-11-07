@@ -114,19 +114,43 @@ async def create_survey(survey: SurveyDirectCreate, db=Depends(get_db)):
         raise HTTPException(status_code=403, detail="Invalid password")
 
     questions = []
-    for q in survey.questions:
+    images = []
+
+    for row in survey.questions:
         question = {
-            "text": q.text,
-            "type": q.type,
-            "options": q.options,
-            "image": q.image,
+            "text": row.text,
+            "type": row.type,
         }
+        if question["type"] == "MultipleChoice":
+            question["options"] = row.options
+        elif question["type"] == "ImageQuestion":
+            question["imageName"] = row.imageName  # Use imageName
+            images.append({"image_name": row.imageName, "image_data": row.image})
+        elif question["type"] == "LikertScale":
+            question["scale"] = int(row.scale_points)
+        # For other question types, no additional fields are needed
         questions.append(question)
 
     new_survey = Survey(name=survey.title, questions=questions)
     db.add(new_survey)
     db.commit()
     db.refresh(new_survey)
+
+    # Save images
+    if images:
+        for image in images:
+            image_data = image["image_data"]
+            # Remove the data URL prefix if present
+            if image_data.startswith("data:image"):
+                image_data = image_data.split(",", 1)[1]
+            image_data = base64.b64decode(image_data)
+            image_record = Image(
+                survey_id=new_survey.id,
+                image_data=image_data,
+                image_name=image["image_name"],
+            )
+            db.add(image_record)
+        db.commit()
 
     return {"message": "Survey created successfully"}
 
