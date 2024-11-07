@@ -1,7 +1,7 @@
 <template>
   <div class="image-question">
     <h2 class="text-xl font-semibold mb-4">{{ question.text }}</h2>
-    <div class="relative" ref="imageContainer">
+    <div class="relative fullscreen-container" ref="imageContainer">
       <img
         :src="'data:image/png;base64,' + question.images[0].data"
         :alt="question.images[0].name"
@@ -21,46 +21,61 @@
         class="absolute w-4 h-4 bg-red-500 rounded-full transform -translate-x-1/2 -translate-y-1/2"
         @click="removeMarker(index)"
       ></div>
-    </div>
-    <div class="toolbar mt-4 flex space-x-2">
-      <button
-        @click="toggleFullScreen"
-        class="bg-blue-500 text-white p-2 rounded-full hover:bg-blue-600 transition duration-300"
-        :title="isFullScreen ? 'Exit full screen' : 'Enter full screen'"
+      <div 
+        class="toolbar-container" 
+        ref="toolbarRef"
+        :style="{ 
+          top: `${toolbarPosition.y}px`,
+          left: `${toolbarPosition.x}px`,
+          cursor: isDragging ? 'grabbing' : 'grab'
+        }"
+        @mousedown.stop="startDragging"
+        @touchstart.stop.prevent="startDragging"
       >
-        <Maximize2 v-if="!isFullScreen" class="w-5 h-5" />
-        <Minimize2 v-else class="w-5 h-5" />
-      </button>
-      <button
-        @click="setTool('stamp')"
-        class="bg-green-500 text-white p-2 rounded-full hover:bg-green-600 transition duration-300"
-        :class="{ 'ring-2 ring-offset-2 ring-green-500': currentTool === 'stamp' }"
-        title="Add marker"
-      >
-        <MapPin class="w-5 h-5" />
-      </button>
-      <button
-        @click="setTool('eraser')"
-        class="bg-yellow-500 text-white p-2 rounded-full hover:bg-yellow-600 transition duration-300"
-        :class="{ 'ring-2 ring-offset-2 ring-yellow-500': currentTool === 'eraser' }"
-        title="Erase marker"
-      >
-        <Eraser class="w-5 h-5" />
-      </button>
-      <button
-        @click="clearAllMarkers"
-        class="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition duration-300"
-        title="Clear all markers"
-      >
-        <Trash2 class="w-5 h-5" />
-      </button>
+        <div class="toolbar mt-4 flex space-x-2" @click.stop>
+          <div class="drag-handle flex items-center px-2 text-gray-400">
+            <GripVertical class="w-4 h-4" />
+          </div>
+          <button
+            @click="toggleFullScreen"
+            class="bg-blue-500 text-white p-2 rounded-full hover:bg-blue-600 transition duration-300"
+            :title="isFullScreen ? 'Exit full screen' : 'Enter full screen'"
+          >
+            <Maximize2 v-if="!isFullScreen" class="w-5 h-5" />
+            <Minimize2 v-else class="w-5 h-5" />
+          </button>
+          <button
+            @click="setTool('stamp')"
+            class="bg-green-500 text-white p-2 rounded-full hover:bg-green-600 transition duration-300"
+            :class="{ 'ring-2 ring-offset-2 ring-green-500': currentTool === 'stamp' }"
+            title="Add marker"
+          >
+            <MapPin class="w-5 h-5" />
+          </button>
+          <button
+            @click="setTool('eraser')"
+            class="bg-yellow-500 text-white p-2 rounded-full hover:bg-yellow-600 transition duration-300"
+            :class="{ 'ring-2 ring-offset-2 ring-yellow-500': currentTool === 'eraser' }"
+            title="Erase marker"
+          >
+            <Eraser class="w-5 h-5" />
+          </button>
+          <button
+            @click="clearAllMarkers"
+            class="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition duration-300"
+            title="Clear all markers"
+          >
+            <Trash2 class="w-5 h-5" />
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, computed, onUnmounted } from 'vue';
-import { Maximize2, Minimize2, MapPin, Eraser, Trash2 } from 'lucide-vue-next';
+import { Maximize2, Minimize2, MapPin, Eraser, Trash2, GripVertical } from 'lucide-vue-next';
 
 const props = defineProps({
   question: Object,
@@ -192,6 +207,13 @@ const calculateCurrentImageHeightAndWidth = () => {
 
 const handleFullScreenChange = () => {
   isFullScreen.value = !!document.fullscreenElement;
+  document.body.classList.toggle('fullscreen-mode', isFullScreen.value);
+
+  // Reset offsets in fullscreen mode
+  if (isFullScreen.value) {
+    offset.value = { top: 0, left: 0 };
+  }
+
   setTimeout(() => {
     calculateCurrentImageHeightAndWidth()
     const rect = imageRef.value.getBoundingClientRect()
@@ -209,68 +231,124 @@ const handleFullScreenChange = () => {
   }, 100) // Small delay to ensure transition completed
 };
 
+const toolbarRef = ref(null);
+const toolbarPosition = ref({ x: 20, y: 20 });
+const isDragging = ref(false);
+const dragOffset = ref({ x: 0, y: 0 });
+
+const startDragging = (event) => {
+  isDragging.value = true;
+  event.preventDefault();
+
+  const pos = event.type.startsWith('touch') ? event.touches[0] : event;
+  const rect = toolbarRef.value.getBoundingClientRect();
+
+  dragOffset.value = {
+    x: pos.clientX - rect.left,
+    y: pos.clientY - rect.top,
+  };
+
+  document.addEventListener('mousemove', handleDragging);
+  document.addEventListener('mouseup', stopDragging);
+  document.addEventListener('touchmove', handleDragging);
+  document.addEventListener('touchend', stopDragging);
+};
+
+const handleDragging = (event) => {
+  if (!isDragging.value) return;
+  event.preventDefault();
+
+  const pos = event.type.startsWith('touch') ? event.touches[0] : event;
+
+  const newX = pos.clientX - dragOffset.value.x;
+  const newY = pos.clientY - dragOffset.value.y;
+
+  // Constrain to viewport
+  const toolbar = toolbarRef.value;
+  const maxX = window.innerWidth - toolbar.offsetWidth;
+  const maxY = window.innerHeight - toolbar.offsetHeight;
+
+  toolbarPosition.value = {
+    x: Math.min(Math.max(0, newX), maxX),
+    y: Math.min(Math.max(0, newY), maxY),
+  };
+};
+
+const stopDragging = () => {
+  isDragging.value = false;
+  document.removeEventListener('mousemove', handleDragging);
+  document.removeEventListener('mouseup', stopDragging);
+  document.removeEventListener('touchmove', handleDragging);
+  document.removeEventListener('touchend', stopDragging);
+};
+
 onMounted(() => {
   coordinates.value = props.initialAnswer || [];
   document.addEventListener('fullscreenchange', handleFullScreenChange);
+
+  // move the toolbar below the image
+  const rect = imageContainer.value.getBoundingClientRect();
+  toolbarPosition.value = {
+    x: rect.x + rect.width / 2 - toolbarRef.value.offsetWidth / 2,
+    y: rect.y + rect.height - 10,
+  };
 });
 
 onUnmounted(() => {
   document.removeEventListener('fullscreenchange', handleFullScreenChange);
+  document.removeEventListener('mousemove', handleDragging);
+  document.removeEventListener('mouseup', stopDragging);
+  document.removeEventListener('touchmove', handleDragging);
+  document.removeEventListener('touchend', stopDragging);
 });
 </script>
 
 <style scoped>
-.image-question {
-  transition: all 0.3s ease;
-}
-
-:fullscreen {
-  background: white;
-}
-
-:fullscreen .image-question {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem;
-}
-
-:fullscreen .relative {
+.fullscreen-container {
   position: relative;
   width: 100%;
-  height: calc(100vh - 8rem);
+}
+
+.fullscreen-container:fullscreen {
+  background: white;
+  width: 100vw;
+  height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 0;
 }
 
-:fullscreen img {
-  max-width: 100%;
-  max-height: 100%;
-  width: 100vw;
-  height: 100vh;
+.fullscreen-container:fullscreen img {
+  width: 100%;
+  height: 100%;
   object-fit: contain;
 }
 
-:fullscreen .toolbar {
+.toolbar-container {
   position: fixed;
-  bottom: 2rem;
-  left: 50%;
-  transform: translateX(-50%);
+  z-index: 9999;
+  user-select: none;
+  touch-action: none;
+}
+
+.toolbar {
+  display: flex;
   background: rgba(255, 255, 255, 0.9);
   padding: 0.5rem;
   border-radius: 9999px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  z-index: 9999;
+  backdrop-filter: blur(8px);
+  pointer-events: auto;
 }
 
-.toolbar {
-  z-index: 9999;
+.drag-handle {
+  cursor: grab;
+  touch-action: none;
+  pointer-events: auto;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
 }
 </style>
