@@ -131,7 +131,7 @@ async def create_survey(survey: SurveyDirectCreate, db=Depends(get_db)):
         # For other question types, no additional fields are needed
         questions.append(question)
 
-    new_survey = Survey(name=survey.title, questions=questions)
+    new_survey = Survey(name=survey.title.strip(), questions=questions)
     db.add(new_survey)
     db.commit()
     db.refresh(new_survey)

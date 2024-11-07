@@ -17,9 +17,6 @@
           <NuxtLink to="/surveys" class="text-gray-700 hover:text-indigo-600 transition duration-300">
             Umfragen
           </NuxtLink>
-          <NuxtLink to="/create-survey" class="text-gray-700 hover:text-indigo-600 transition duration-300">
-            Neue Umfrage
-          </NuxtLink>
           <div class="relative group">
             <button class="text-gray-700 hover:text-indigo-600 transition duration-300 flex items-center">
               Admin
@@ -28,11 +25,17 @@
             <div class="absolute right-0 mt-1 w-48 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50 transform">
               <div class="py-1">
                 <NuxtLink 
-                  to="/admin/RequestResults" 
+                  to="/create-survey" 
                   class="flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-500 hover:text-white">
-                  <UIcon name="i-heroicons-document-duplicate-20-solid" />
-                  <span>Ergebnisse Anfordern</span>
+                  <UIcon name="i-heroicons-plus-circle" />
+                  <span>Neue Umfrage</span>
                 </NuxtLink>
+                <NuxtLink 
+                to="/admin/RequestResults" 
+                class="flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-500 hover:text-white">
+                <UIcon name="i-heroicons-document-duplicate-20-solid" />
+                <span>Ergebnisse Anfordern</span>
+              </NuxtLink>
                 <NuxtLink 
                   to="/admin/UploadSurvey" 
                   class="flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-500 hover:text-white">
@@ -59,9 +62,6 @@
           <NuxtLink to="/surveys" class="text-gray-700 hover:text-indigo-600 transition duration-300">
             Umfragen
           </NuxtLink>
-          <NuxtLink to="/create-survey" class="text-gray-700 hover:text-indigo-600 transition duration-300">
-            Neue Umfrage
-          </NuxtLink>
           <!-- Admin submenu -->
           <div>
             <button @click="isAdminMenuOpen = !isAdminMenuOpen" class="text-gray-700 hover:text-indigo-600 transition duration-300 flex items-center">
@@ -86,6 +86,12 @@
                 class="flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-500 hover:text-white">
                 <UIcon name="i-heroicons-trash" />
                 <span>Umfrage Löschen</span>
+              </NuxtLink>
+              <NuxtLink 
+                to="/create-survey" 
+                class="flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-500 hover:text-white">
+                <UIcon name="i-heroicons-plus-circle" />
+                <span>Neue Umfrage</span>
               </NuxtLink>
             </div>
           </div>
