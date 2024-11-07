@@ -5,7 +5,12 @@
         <NuxtLink to="/" class="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-indigo-600">
           ST-UMFRAGEN
         </NuxtLink>
-        <div class="flex space-x-4 items-center">
+        <!-- Menu toggle button for small screens -->
+        <button @click="isMenuOpen = !isMenuOpen" class="text-gray-700 md:hidden">
+          <UIcon name="i-heroicons-bars-3" class="w-6 h-6" />
+        </button>
+        <!-- Navigation links for medium and larger screens -->
+        <div class="hidden md:flex space-x-4 items-center">
           <NuxtLink to="/" class="text-gray-700 hover:text-indigo-600 transition duration-300">
             Startseite
           </NuxtLink>
@@ -36,12 +41,46 @@
           </div>
         </div>
       </div>
+      <!-- Mobile navigation menu -->
+      <div v-if="isMenuOpen" class="mt-2 md:hidden">
+        <div class="flex flex-col space-y-2">
+          <NuxtLink to="/" class="text-gray-700 hover:text-indigo-600 transition duration-300">
+            Startseite
+          </NuxtLink>
+          <NuxtLink to="/surveys" class="text-gray-700 hover:text-indigo-600 transition duration-300">
+            Umfragen
+          </NuxtLink>
+          <!-- Admin submenu -->
+          <div>
+            <button @click="isAdminMenuOpen = !isAdminMenuOpen" class="text-gray-700 hover:text-indigo-600 transition duration-300 flex items-center">
+              Admin
+              <UIcon name="i-heroicons-chevron-down-20-solid" class="ml-1 w-4 h-4" />
+            </button>
+            <div v-if="isAdminMenuOpen" class="mt-1 flex flex-col space-y-1">
+              <NuxtLink 
+                to="/admin/RequestResults" 
+                class="flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-500 hover:text-white">
+                <UIcon name="i-heroicons-document-duplicate-20-solid" />
+                <span>Ergebnisse Anfordern</span>
+              </NuxtLink>
+              <NuxtLink 
+                to="/admin/UploadSurvey" 
+                class="flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-500 hover:text-white">
+                <UIcon name="i-heroicons-solid:cloud-upload" />
+                <span>Umfrage Hochladen</span>
+              </NuxtLink>
+            </div>
+          </div>
+        </div>
+      </div>
     </nav>
   </header>
 </template>
 
 <script setup lang="ts">
-// No additional setup needed
+  import { ref } from 'vue';
+  const isMenuOpen = ref(false);
+  const isAdminMenuOpen = ref(false);
 </script>
 
 <style scoped>
