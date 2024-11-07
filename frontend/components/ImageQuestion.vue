@@ -94,7 +94,7 @@
           <button
             @click.stop="setTool('eraser')"
             @touchend.stop.prevent="handleButtonTouch($event, () => setTool('eraser'))"
-            class="bg-yellow-500 text-white p-2 rounded-full hover:bg-yellow-600 transition duration-300"
+            class="bg-yellow-500 text-white p-2 mr-2 ml-2 rounded-full hover:bg-yellow-600 transition duration-300"
             :class="{ 'ring-2 ring-offset-2 ring-yellow-500': currentTool === 'eraser' }"
             title="Erase marker"
           >
@@ -161,6 +161,19 @@ const handleImageLoad = async () => {
   await nextTick();
 
   if (!isMobile.value) {
+    // Positions relative to the container
+    setToolbarPosition();
+  }
+};
+
+const setToolbarPosition = () => {
+  if (isFullScreen.value) {
+    // Position toolbar in fullscreen mode
+    toolbarPosition.value = {
+      x: (currentImageWidth.value / 2) - (toolbarRef.value.offsetWidth / 2),
+      y: currentImageHeight.value + 10, // 10px below the image
+    };
+  } else {
     // Positions relative to the container
     const imageOffsetLeft = imageRef.value.offsetLeft;
     const imageOffsetTop = imageRef.value.offsetTop;
@@ -264,7 +277,7 @@ const calculateCurrentImageHeightAndWidth = () => {
   fullscreenTrigger.value++;
 };
 
-const handleFullScreenChange = () => {
+const handleFullScreenChange = async () => {
   isFullScreen.value = !!document.fullscreenElement;
   document.body.classList.toggle('fullscreen-mode', isFullScreen.value);
 
@@ -272,7 +285,7 @@ const handleFullScreenChange = () => {
     offset.value = { top: 0, left: 0 };
   }
 
-  setTimeout(() => {
+  setTimeout(async () => {
     calculateCurrentImageHeightAndWidth();
     const rect = imageRef.value.getBoundingClientRect();
     if (isFullScreen.value) {
@@ -286,11 +299,17 @@ const handleFullScreenChange = () => {
     } else {
       offset.value = { top: 0, left: 0 };
     }
+
+    // Reset toolbar position
+    await nextTick();
+    if (!isMobile.value) {
+      setToolbarPosition();
+    }
   }, 100);
 };
 
 const toolbarRef = ref(null);
-const toolbarPosition = ref({ x: 20, y: 20 });
+const toolbarPosition = ref({ x: 0, y: 0 });
 const isDragging = ref(false);
 const dragOffset = ref({ x: 0, y: 0 });
 
@@ -316,9 +335,11 @@ const startDragging = event => {
 
   const pos = event.type.startsWith('touch') ? event.touches[0] : event;
 
+  const containerRect = imageContainer.value.getBoundingClientRect();
+
   dragOffset.value = {
-    x: pos.clientX - toolbarPosition.value.x,
-    y: pos.clientY - toolbarPosition.value.y,
+    x: pos.clientX - toolbarPosition.value.x - containerRect.left,
+    y: pos.clientY - toolbarPosition.value.y - containerRect.top,
   };
 
   startX = pos.clientX;
@@ -344,9 +365,11 @@ const handleDragging = event => {
   if (isDragging.value) {
     event.preventDefault();
 
+    const containerRect = imageContainer.value.getBoundingClientRect();
+
     toolbarPosition.value = {
-      x: pos.clientX - dragOffset.value.x,
-      y: pos.clientY - dragOffset.value.y,
+      x: pos.clientX - dragOffset.value.x - containerRect.left,
+      y: pos.clientY - dragOffset.value.y - containerRect.top,
     };
   }
 };
@@ -367,8 +390,6 @@ onMounted(() => {
   isMobile.value = /Mobi|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
     navigator.userAgent
   );
-
-  console.log(toolbarPosition.value);
 });
 
 onUnmounted(() => {
