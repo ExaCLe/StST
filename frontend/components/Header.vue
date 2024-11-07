@@ -17,6 +17,9 @@
           <NuxtLink to="/surveys" class="text-gray-700 hover:text-indigo-600 transition duration-300">
             Umfragen
           </NuxtLink>
+          <NuxtLink to="/create-survey" class="text-gray-700 hover:text-indigo-600 transition duration-300">
+            Neue Umfrage
+          </NuxtLink>
           <div class="relative group">
             <button class="text-gray-700 hover:text-indigo-600 transition duration-300 flex items-center">
               Admin
@@ -55,6 +58,9 @@
           </NuxtLink>
           <NuxtLink to="/surveys" class="text-gray-700 hover:text-indigo-600 transition duration-300">
             Umfragen
+          </NuxtLink>
+          <NuxtLink to="/create-survey" class="text-gray-700 hover:text-indigo-600 transition duration-300">
+            Neue Umfrage
           </NuxtLink>
           <!-- Admin submenu -->
           <div>

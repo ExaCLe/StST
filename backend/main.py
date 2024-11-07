@@ -11,7 +11,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from models import Base, Survey, Response, Image
 from database import get_db
-from schemas import SurveyCreate, ResponseCreate
+from schemas import SurveyCreate, ResponseCreate, SurveyDirectCreate
 import csv
 from email.mime.text import MIMEText
 import smtplib
@@ -106,6 +106,29 @@ async def upload_survey(
         db.commit()
 
     return {"message": "Survey with images uploaded successfully"}
+
+
+@app.post("/api/create-survey")
+async def create_survey(survey: SurveyDirectCreate, db=Depends(get_db)):
+    if survey.adminPassword != os.getenv("ADMIN_PASSWORD"):
+        raise HTTPException(status_code=403, detail="Invalid password")
+
+    questions = []
+    for q in survey.questions:
+        question = {
+            "text": q.text,
+            "type": q.type,
+            "options": q.options,
+            "image": q.image,
+        }
+        questions.append(question)
+
+    new_survey = Survey(name=survey.title, questions=questions)
+    db.add(new_survey)
+    db.commit()
+    db.refresh(new_survey)
+
+    return {"message": "Survey created successfully"}
 
 
 @app.get("/api/survey/{name}")

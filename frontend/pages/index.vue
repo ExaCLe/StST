@@ -57,6 +57,18 @@
               Hinweis: Admin-Passwort erforderlich für den Zugriff
             </p>
           </div>
+
+          <NuxtLink to="/create-survey" class="group">
+            <div class="bg-gradient-to-br from-green-400 to-teal-600 rounded-xl p-8 text-white transition-all duration-300 transform hover:scale-105 hover:shadow-lg">
+              <UIcon name="i-heroicons-plus-circle" class="w-12 h-12 mb-4" />
+              <h2 class="text-2xl font-bold mb-2">Neue Umfrage erstellen</h2>
+              <p class="mb-4">Erstellen Sie eine neue Umfrage</p>
+              <span class="inline-flex items-center text-sm font-medium">
+                Umfrage erstellen
+                <span class="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform">→</span>
+              </span>
+            </div>
+          </NuxtLink>
         </div>
 
         <div class="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
