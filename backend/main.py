@@ -11,7 +11,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from models import Base, Survey, Response, Image
 from database import get_db
-from schemas import SurveyCreate, ResponseCreate
+from schemas import SurveyCreate, ResponseCreate, SurveyDirectCreate
 import csv
 from email.mime.text import MIMEText
 import smtplib
@@ -106,6 +106,53 @@ async def upload_survey(
         db.commit()
 
     return {"message": "Survey with images uploaded successfully"}
+
+
+@app.post("/api/create-survey")
+async def create_survey(survey: SurveyDirectCreate, db=Depends(get_db)):
+    if survey.adminPassword != os.getenv("ADMIN_PASSWORD"):
+        raise HTTPException(status_code=403, detail="Invalid password")
+
+    questions = []
+    images = []
+
+    for row in survey.questions:
+        question = {
+            "text": row.text,
+            "type": row.type,
+        }
+        if question["type"] == "MultipleChoice":
+            question["options"] = row.options
+        elif question["type"] == "ImageQuestion":
+            question["imageName"] = row.imageName  # Use imageName
+            images.append({"image_name": row.imageName, "image_data": row.image})
+        elif question["type"] == "LikertScale":
+            question["scale"] = int(row.scale_points)
+        # For other question types, no additional fields are needed
+        questions.append(question)
+
+    new_survey = Survey(name=survey.title.strip(), questions=questions)
+    db.add(new_survey)
+    db.commit()
+    db.refresh(new_survey)
+
+    # Save images
+    if images:
+        for image in images:
+            image_data = image["image_data"]
+            # Remove the data URL prefix if present
+            if image_data.startswith("data:image"):
+                image_data = image_data.split(",", 1)[1]
+            image_data = base64.b64decode(image_data)
+            image_record = Image(
+                survey_id=new_survey.id,
+                image_data=image_data,
+                image_name=image["image_name"],
+            )
+            db.add(image_record)
+        db.commit()
+
+    return {"message": "Survey created successfully"}
 
 
 @app.get("/api/survey/{name}")
