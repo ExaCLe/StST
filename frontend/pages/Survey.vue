@@ -1,53 +1,60 @@
 <template>
   <div class="max-w-3xl mx-auto">
-    <h1 class="text-3xl font-bold mb-8 text-indigo-800">{{ survey?.name || "Loading Survey..." }}</h1>
-    
-    <div v-if="currentIndex < (survey?.questions?.length || 0)">
-      <!-- Progress Bar -->
-      <div class="w-full bg-gray-200 rounded-full h-2.5 mb-8">
-        <div
-          class="bg-indigo-600 h-2.5 rounded-full transition-all duration-300 ease-in-out"
-          :style="{ width: `${progressPercentage}%` }"
-        ></div>
-      </div>
-
-      <div class="mb-8 bg-white rounded-lg shadow-md p-6">
-        <component
-          :is="getComponent(currentQuestion?.type)"
-          :question="currentQuestion"
-          :initialAnswer="answers[currentIndex]"
-          @answer="updateAnswer(currentIndex, $event)"
-        />
-      </div>
-
-      <div class="flex justify-between">
-        <button
-          v-if="currentIndex > 0"
-          @click="prevQuestion"
-          :disabled="currentIndex === 0"
-          class="bg-gray-300 text-gray-700 hover:bg-gray-400 transition duration-300 disabled:opacity-50 py-2 px-4 rounded-full"
-        >
-          Previous
-        </button>
-        <button
-          @click="handleNextOrSubmit"
-          class="bg-indigo-600 text-white hover:bg-indigo-700 transition duration-300 py-2 px-4 rounded-full"
-          :class="{ 'ml-auto': currentIndex === 0 }"
-        >
-          {{ isLastQuestion ? 'Submit' : 'Next' }}
-        </button>
-      </div>
+    <!-- Ladeindikator anzeigen -->
+    <div v-if="loading" class="text-center mt-8">
+      <div class="spinner border-t-4 border-indigo-600 rounded-full w-16 h-16 mx-auto animate-spin mb-4"></div>
+      <p class="text-gray-600">Bitte warten Sie einen Moment, es kann ein paar Sekunden dauern...</p>
     </div>
+    <div v-else>
+      <h1 class="text-3xl font-bold mb-8 text-indigo-800">{{ survey?.name || "Lade Umfrage..." }}</h1>
+      
+      <div v-if="currentIndex < (survey?.questions?.length || 0)">
+        <!-- Progress Bar -->
+        <div class="w-full bg-gray-200 rounded-full h-2.5 mb-8">
+          <div
+            class="bg-indigo-600 h-2.5 rounded-full transition-all duration-300 ease-in-out"
+            :style="{ width: `${progressPercentage}%` }"
+          ></div>
+        </div>
 
-    <div v-else class="text-center">
-      <h2 class="text-2xl font-bold mb-4 text-indigo-800">Thank you for completing the survey!</h2>
-      <p class="text-gray-600 mb-8">{{ message || 'Your responses have been recorded.' }}</p>
-      <NuxtLink
-        to="/surveys"
-        class="inline-block bg-indigo-600 text-white py-2 px-4 rounded-full hover:bg-indigo-700 transition duration-300"
-      >
-        Back to Surveys
-      </NuxtLink>
+        <div class="mb-8 bg-white rounded-lg shadow-md p-6">
+          <component
+            :is="getComponent(currentQuestion?.type)"
+            :question="currentQuestion"
+            :initialAnswer="answers[currentIndex]"
+            @answer="updateAnswer(currentIndex, $event)"
+          />
+        </div>
+
+        <div class="flex justify-between">
+          <button
+            v-if="currentIndex > 0"
+            @click="prevQuestion"
+            :disabled="currentIndex === 0"
+            class="bg-gray-300 text-gray-700 hover:bg-gray-400 transition duration-300 disabled:opacity-50 py-2 px-4 rounded-full"
+          >
+            Previous
+          </button>
+          <button
+            @click="handleNextOrSubmit"
+            class="bg-indigo-600 text-white hover:bg-indigo-700 transition duration-300 py-2 px-4 rounded-full"
+            :class="{ 'ml-auto': currentIndex === 0 }"
+          >
+            {{ isLastQuestion ? 'Submit' : 'Next' }}
+          </button>
+        </div>
+      </div>
+
+      <div v-else class="text-center">
+        <h2 class="text-2xl font-bold mb-4 text-indigo-800">Vielen Dank für das Ausfüllen der Umfrage!</h2>
+        <p class="text-gray-600 mb-8">{{ 'Ihre Antworten wurden gespeichert.' }}</p>
+        <NuxtLink
+          to="/surveys"
+          class="inline-block bg-indigo-600 text-white py-2 px-4 rounded-full hover:bg-indigo-700 transition duration-300"
+        >
+          Zurück zu den Umfragen
+        </NuxtLink>
+      </div>
     </div>
   </div>
 </template>
@@ -68,6 +75,7 @@ const currentIndex = ref(0);
 const route = useRoute();
 const router = useRouter();
 const config = useRuntimeConfig();
+const loading = ref(true);
 
 const questionComponents = {
   MultipleChoice,
@@ -109,11 +117,12 @@ const submitSurvey = async () => {
         },
       }
     );
-    message.value = response.message;
-    router.push('/');
+    message.value = response.message || 'Ihre Antworten wurden gespeichert.';
+    // Weiter zur Abschlussanzeige
+    currentIndex.value++;
   } catch (error) {
     console.error(error);
-    message.value = error.message || 'An error occurred';
+    message.value = error.message || 'Ein Fehler ist aufgetreten';
   }
 };
 
@@ -147,6 +156,8 @@ onMounted(async () => {
     };
   } catch (error) {
     console.error(error);
+  } finally {
+    loading.value = false;
   }
 });
 
@@ -156,3 +167,10 @@ const progressPercentage = computed(() => {
   return Math.round((currentIndex.value / (survey.value.questions.length - 1)) * 100);
 });
 </script>
+
+<style>
+/* CSS für den Spinner */
+.spinner {
+  border-width: 4px;
+}
+</style>

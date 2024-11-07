@@ -2,7 +2,14 @@
   <div class="container mx-auto px-4 py-8">
     <p class="text-3xl font-bold mb-8 text-indigo-800">Verfügbare Umfragen</p>
 
-    <div v-if="surveys.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div v-if="loading" class="flex flex-col items-center justify-center">
+      <svg class="animate-spin h-8 w-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+      </svg>
+      <p class="mt-4 text-indigo-600">Bitte warten Sie ein paar Sekunden, es ist normal, dass es eine Weile dauert.</p>
+    </div>
+    <div v-else-if="surveys.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       <div 
         v-for="survey in formattedSurveys" 
         :key="survey.id"
@@ -30,6 +37,7 @@ import { useRuntimeConfig } from '#app';
 const config = useRuntimeConfig();
 const surveys = ref([]);
 const toast = useToast();
+const loading = ref(true);
 
 const formattedSurveys = computed(() => {
   return surveys.value.map((name, index) => ({
@@ -53,10 +61,12 @@ onMounted(async () => {
   } catch (error) {
     toast.add({
       title: 'Fehler beim Laden der Umfragen',
-      description: 'Es ist ein Fehler beim Laden der Umfragen aufgetreten.',
+      description: 'Bitte versuchen Sie es sofort erneut indem Sie die Seite neu laden.',
       color: 'primary'
     })
     console.error(error);
+  } finally {
+    loading.value = false;
   }
 });
 </script>
