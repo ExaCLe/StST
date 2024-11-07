@@ -37,7 +37,8 @@
             <GripVertical class="w-4 h-4" />
           </div>
           <button
-            @click="toggleFullScreen"
+            @click.stop="toggleFullScreen"
+            @touchend.stop.prevent="handleButtonTouch($event, toggleFullScreen)"
             class="bg-blue-500 text-white p-2 rounded-full hover:bg-blue-600 transition duration-300"
             :title="isFullScreen ? 'Exit full screen' : 'Enter full screen'"
           >
@@ -45,7 +46,8 @@
             <Minimize2 v-else class="w-5 h-5" />
           </button>
           <button
-            @click="setTool('stamp')"
+            @click.stop="setTool('stamp')"
+            @touchend.stop.prevent="handleButtonTouch($event, () => setTool('stamp'))"
             class="bg-green-500 text-white p-2 rounded-full hover:bg-green-600 transition duration-300"
             :class="{ 'ring-2 ring-offset-2 ring-green-500': currentTool === 'stamp' }"
             title="Add marker"
@@ -53,7 +55,8 @@
             <MapPin class="w-5 h-5" />
           </button>
           <button
-            @click="setTool('eraser')"
+            @click.stop="setTool('eraser')"
+            @touchend.stop.prevent="handleButtonTouch($event, () => setTool('eraser'))"
             class="bg-yellow-500 text-white p-2 rounded-full hover:bg-yellow-600 transition duration-300"
             :class="{ 'ring-2 ring-offset-2 ring-yellow-500': currentTool === 'eraser' }"
             title="Erase marker"
@@ -61,7 +64,8 @@
             <Eraser class="w-5 h-5" />
           </button>
           <button
-            @click="clearAllMarkers"
+            @click.stop="clearAllMarkers"
+            @touchend.stop.prevent="handleButtonTouch($event, clearAllMarkers)"
             class="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition duration-300"
             title="Clear all markers"
           >
@@ -236,42 +240,60 @@ const toolbarPosition = ref({ x: 20, y: 20 });
 const isDragging = ref(false);
 const dragOffset = ref({ x: 0, y: 0 });
 
+const movementThreshold = 10; // pixels
+let startX = 0;
+let startY = 0;
+let moved = false;
+
+const handleButtonTouch = (event, callback) => {
+  event.preventDefault();
+  if (!isDragging.value && !moved) {
+    callback();
+  }
+  moved = false;
+};
+
 const startDragging = (event) => {
-  isDragging.value = true;
+  isDragging.value = false;
+  moved = false;
   event.preventDefault();
 
   const pos = event.type.startsWith('touch') ? event.touches[0] : event;
-  const rect = toolbarRef.value.getBoundingClientRect();
 
+  // Calculate drag offset based on current toolbar position
   dragOffset.value = {
-    x: pos.clientX - rect.left,
-    y: pos.clientY - rect.top,
+    x: pos.clientX - toolbarPosition.value.x,
+    y: pos.clientY - toolbarPosition.value.y,
   };
+
+  startX = pos.clientX;
+  startY = pos.clientY;
 
   document.addEventListener('mousemove', handleDragging);
   document.addEventListener('mouseup', stopDragging);
-  document.addEventListener('touchmove', handleDragging);
+  document.addEventListener('touchmove', handleDragging, { passive: false });
   document.addEventListener('touchend', stopDragging);
 };
 
 const handleDragging = (event) => {
-  if (!isDragging.value) return;
-  event.preventDefault();
-
   const pos = event.type.startsWith('touch') ? event.touches[0] : event;
+  const deltaX = pos.clientX - startX;
+  const deltaY = pos.clientY - startY;
+  const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
 
-  const newX = pos.clientX - dragOffset.value.x;
-  const newY = pos.clientY - dragOffset.value.y;
+  if (distance > movementThreshold && !isDragging.value) {
+    isDragging.value = true;
+    moved = true;
+  }
 
-  // Constrain to viewport
-  const toolbar = toolbarRef.value;
-  const maxX = window.innerWidth - toolbar.offsetWidth;
-  const maxY = window.innerHeight - toolbar.offsetHeight;
+  if (isDragging.value) {
+    event.preventDefault();
 
-  toolbarPosition.value = {
-    x: Math.min(Math.max(0, newX), maxX),
-    y: Math.min(Math.max(0, newY), maxY),
-  };
+    toolbarPosition.value = {
+      x: pos.clientX - dragOffset.value.x,
+      y: pos.clientY - dragOffset.value.y,
+    };
+  }
 };
 
 const stopDragging = () => {
@@ -280,6 +302,7 @@ const stopDragging = () => {
   document.removeEventListener('mouseup', stopDragging);
   document.removeEventListener('touchmove', handleDragging);
   document.removeEventListener('touchend', stopDragging);
+  moved = false;
 };
 
 onMounted(() => {
@@ -340,6 +363,7 @@ onUnmounted(() => {
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   backdrop-filter: blur(8px);
   pointer-events: auto;
+  touch-action: none; /* Ensure touch actions are handled manually */
 }
 
 .drag-handle {
