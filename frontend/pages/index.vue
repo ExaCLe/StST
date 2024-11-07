@@ -34,7 +34,7 @@
             <h2 class="text-2xl font-bold mb-2">Admin-Bereich</h2>
             <p class="mb-4">Geschützter Bereich für Umfrageverwaltung</p>
             <div class="space-y-2">
-              <NuxtLink to="/create-survey" class="block group">
+              <NuxtLink to="/admin/create-survey" class="block group">
                 <span class="inline-flex items-center text-sm font-medium">
                   Neue Umfrage erstellen
                   <span class="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform">→</span>
