@@ -15,12 +15,14 @@
         v-for="(coord, index) in displayCoordinates"
         :key="index"
         :style="{
-          left: `calc(${coord.x}px + ${offset.left}px)`,
-          top: `calc(${coord.y}px + ${offset.top}px)`
+          left: `calc(${coord.x}px + ${offset.left}px - 12px)`, // Adjusted for icon width
+          top: `calc(${coord.y}px + ${offset.top}px - 24px)` // Adjusted for icon height
         }"
-        class="absolute w-4 h-4 bg-red-500 rounded-full transform -translate-x-1/2 -translate-y-1/2"
+        class="absolute transform"
         @click="removeMarker(index)"
-      ></div>
+      >
+        <MapPin class="w-6 h-6 text-red-500" />
+      </div>
       <div 
         class="toolbar-container" 
         ref="toolbarRef"
