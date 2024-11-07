@@ -173,3 +173,21 @@ async def request_results(
     images = db.query(Image).filter(Image.survey_id == survey.id).all()
 
     return create_results_package(survey, responses, images)
+
+
+@app.delete("/api/delete-survey/{name}")
+async def delete_survey(name: str, password: str, db=Depends(get_db)):
+    if password != os.getenv("ADMIN_PASSWORD"):
+        raise HTTPException(status_code=403, detail="Invalid password")
+
+    survey = db.query(Survey).filter(Survey.name == name).first()
+    if not survey:
+        raise HTTPException(status_code=404, detail="Survey not found")
+
+    # Delete associated responses and images
+    db.query(Response).filter(Response.survey_id == survey.id).delete()
+    db.query(Image).filter(Image.survey_id == survey.id).delete()
+    db.delete(survey)
+    db.commit()
+
+    return {"message": f"Survey '{name}' deleted successfully"}
