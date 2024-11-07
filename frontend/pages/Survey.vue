@@ -1,9 +1,12 @@
 <template>
   <div class="max-w-3xl mx-auto">
-    <!-- Ladeindikator anzeigen -->
-    <div v-if="loading" class="text-center mt-8">
-      <div class="spinner border-t-4 border-indigo-600 rounded-full w-16 h-16 mx-auto animate-spin mb-4"></div>
-      <p class="text-gray-600">Bitte warten Sie einen Moment, es kann ein paar Sekunden dauern...</p>
+    <!-- Replace loading indicator -->
+    <div v-if="loading" class="flex flex-col items-center justify-center mt-8">
+      <svg class="animate-spin h-8 w-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+      </svg>
+      <p class="mt-4 text-indigo-600">Bitte warten Sie ein paar Sekunden, es ist normal, dass es eine Weile dauert.</p>
     </div>
     <div v-else>
       <h1 class="text-3xl font-bold mb-8 text-indigo-800">{{ survey?.name || "Lade Umfrage..." }}</h1>

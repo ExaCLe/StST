@@ -9,7 +9,7 @@
           v-model="localAnswer" 
           class="form-radio text-indigo-600"
         >
-        <span class="ml-2">True</span>
+        <span class="ml-2">Ja</span>
       </label>
       <label class="inline-flex items-center">
         <input 
@@ -18,7 +18,7 @@
           v-model="localAnswer" 
           class="form-radio text-indigo-600"
         >
-        <span class="ml-2">False</span>
+        <span class="ml-2">Nein</span>
       </label>
     </div>
   </div>
