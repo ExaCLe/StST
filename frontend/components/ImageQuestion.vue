@@ -158,18 +158,16 @@ const handleImageLoad = async () => {
   imageAspectRatio.value = originalImageDimensions.value.width / originalImageDimensions.value.height;
   calculateCurrentImageHeightAndWidth();
 
-  // Wait for DOM to update
   await nextTick();
 
-  // Move toolbar positioning here
   if (!isMobile.value) {
-    // Position the toolbar for desktop devices
-    const rect = imageContainer.value.getBoundingClientRect();
-    const toolbarRect = toolbarRef.value.getBoundingClientRect();
+    // Positions relative to the container
+    const imageOffsetLeft = imageRef.value.offsetLeft;
+    const imageOffsetTop = imageRef.value.offsetTop;
 
     toolbarPosition.value = {
-      x: rect.left + rect.width / 2 - toolbarRect.width / 2,
-      y: rect.top + rect.height - toolbarRect.height - 10,
+      x: imageOffsetLeft + (imageRef.value.offsetWidth / 2) - (toolbarRef.value.offsetWidth / 2),
+      y: imageOffsetTop + imageRef.value.offsetHeight + 10, // 10px below the image
     };
   }
 };
@@ -386,7 +384,7 @@ onUnmounted(() => {
 .fullscreen-container {
   position: relative;
   width: 100%;
-  overflow: visible; /* Ensure overflow is visible */
+  overflow: visible;
 }
 
 .fullscreen-container:fullscreen {
@@ -397,7 +395,7 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   padding: 0;
-  overflow: visible; /* Ensure overflow is visible */
+  overflow: visible;
 }
 
 .fullscreen-container:fullscreen img {
@@ -407,7 +405,7 @@ onUnmounted(() => {
 }
 
 .toolbar-container {
-  position: absolute; /* Changed from fixed to absolute */
+  position: absolute;
   z-index: 9999;
   user-select: none;
   touch-action: none;
