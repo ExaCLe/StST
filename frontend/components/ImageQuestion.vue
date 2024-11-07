@@ -15,8 +15,8 @@
         v-for="(coord, index) in displayCoordinates"
         :key="index"
         :style="{
-          left: `${coord.x}%`,
-          top: `${coord.y}%`
+          left: `calc(${coord.x}px + ${offset.left}px)`,
+          top: `calc(${coord.y}px + ${offset.top}px)`
         }"
         class="absolute w-4 h-4 bg-red-500 rounded-full transform -translate-x-1/2 -translate-y-1/2"
         @click="removeMarker(index)"
@@ -74,17 +74,20 @@ const imageContainer = ref(null);
 const originalImageDimensions = ref({ width: 0, height: 0 });
 const currentTool = ref('stamp');
 const isFullScreen = ref(false);
+const offset = ref({top: 0, left: 0})
+const fullscreenTrigger = ref(0)
+const imageAspectRatio = ref(0)
+const screenAspectRatio = ref(0)
+const currentImageWidth = ref(0)
+const currentImageHeight = ref(0)
 
 const displayCoordinates = computed(() => {
+  fullscreenTrigger.value // Trigger reactivity
   if (!imageRef.value) return [];
   
-  const rect = imageRef.value.getBoundingClientRect();
-  const scaleWidth = rect.width / originalImageDimensions.value.width;
-  const scaleHeight = rect.height / originalImageDimensions.value.height;
-  
   return coordinates.value.map(coord => ({
-    x: (coord.x / originalImageDimensions.value.width) * 100,
-    y: (coord.y / originalImageDimensions.value.height) * 100
+    x: (coord.x / originalImageDimensions.value.width) * currentImageWidth.value,
+    y: (coord.y / originalImageDimensions.value.height) * currentImageHeight.value,
   }));
 });
 
@@ -94,6 +97,8 @@ const handleImageLoad = () => {
     width: img.naturalWidth,
     height: img.naturalHeight
   };
+  imageAspectRatio.value = originalImageDimensions.value.width / originalImageDimensions.value.height
+  calculateCurrentImageHeightAndWidth()
 };
 
 const handleClick = (event) => {
@@ -101,19 +106,44 @@ const handleClick = (event) => {
   
   const rect = imageRef.value.getBoundingClientRect();
   
-  // Calculate relative position within the image
-  const relativeX = event.clientX - rect.left;
-  const relativeY = event.clientY - rect.top;
+  if (!isFullScreen.value){
+    // Calculate relative position within the image
+    const relativeX = event.clientX - rect.left;
+    const relativeY = event.clientY - rect.top;
+    
+    // Convert to percentage of original image dimensions
+    const x = Math.round((relativeX / rect.width) * originalImageDimensions.value.width);
+    const y = Math.round((relativeY / rect.height) * originalImageDimensions.value.height);
   
-  // Convert to percentage of original image dimensions
-  const x = Math.round((relativeX / rect.width) * originalImageDimensions.value.width);
-  const y = Math.round((relativeY / rect.height) * originalImageDimensions.value.height);
-  
-  // Only add marker if within image bounds
-  if (x >= 0 && x <= originalImageDimensions.value.width && 
-      y >= 0 && y <= originalImageDimensions.value.height) {
-    coordinates.value.push({ x, y });
-    emit('answer', coordinates.value);
+    // Only add marker if within image bounds
+    if (x >= 0 && x <= originalImageDimensions.value.width && 
+        y >= 0 && y <= originalImageDimensions.value.height) {
+      coordinates.value.push({ x, y });
+      emit('answer', coordinates.value);
+    }
+  } else {
+
+    // calculate if click is within image bounds
+    if (event.clientX < offset.value.left || event.clientX > offset.value.left + currentImageWidth.value || 
+        event.clientY < offset.value.top || event.clientY > offset.value.top + currentImageHeight.value) {
+      return
+    }
+
+    // Calculate relative position within the image
+    const relativeX = event.clientX - offset.value.left;
+    const relativeY = event.clientY - offset.value.top;
+
+    // Convert to percentage of original image dimensions
+    const x = Math.round((relativeX / currentImageWidth.value) * originalImageDimensions.value.width);
+    const y = Math.round((relativeY / currentImageHeight.value) * originalImageDimensions.value.height);
+
+    // Only add marker if within image bounds
+    if (x >= 0 && x <= originalImageDimensions.value.width && 
+        y >= 0 && y <= originalImageDimensions.value.height) {
+      coordinates.value.push({ x, y });
+      emit('answer', coordinates.value);
+    }
+
   }
 };
 
@@ -141,8 +171,42 @@ const toggleFullScreen = () => {
   }
 };
 
+const calculateCurrentImageHeightAndWidth = () => {
+  const rect = imageRef.value.getBoundingClientRect()
+  if (!isFullScreen.value) {
+    currentImageHeight.value = rect.height 
+    currentImageWidth.value = rect.width
+    return 
+  }
+
+  screenAspectRatio.value = rect.width / rect.height
+  if (screenAspectRatio.value > imageAspectRatio.value) { // image takes full height, but not full width
+    currentImageWidth.value = rect.height * imageAspectRatio.value
+    currentImageHeight.value = rect.height
+  } else { // image takes full width but not full height 
+    currentImageHeight.value = rect.width / imageAspectRatio.value
+    currentImageWidth.value = rect.width
+  } 
+  fullscreenTrigger.value++
+}
+
 const handleFullScreenChange = () => {
   isFullScreen.value = !!document.fullscreenElement;
+  setTimeout(() => {
+    calculateCurrentImageHeightAndWidth()
+    const rect = imageRef.value.getBoundingClientRect()
+    if (isFullScreen.value) {
+      if (screenAspectRatio.value > imageAspectRatio.value) { // image takes full height, but not full width
+        offset.value.top = 0
+        offset.value.left = (rect.width - currentImageWidth.value) / 2 
+      } else { // image takes full width but not full height 
+        offset.value.left = 0
+        offset.value.top = (rect.height - currentImageHeight.value) / 2
+      }
+    } else {
+      offset.value = {top: 0, left: 0}
+    }
+  }, 100) // Small delay to ensure transition completed
 };
 
 onMounted(() => {
@@ -189,8 +253,8 @@ onUnmounted(() => {
 :fullscreen img {
   max-width: 100%;
   max-height: 100%;
-  width: auto;
-  height: auto;
+  width: 100vw;
+  height: 100vh;
   object-fit: contain;
 }
 
