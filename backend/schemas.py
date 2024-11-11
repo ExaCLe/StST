@@ -3,6 +3,17 @@ from pydantic import BaseModel, Field
 from typing import List, Any, Optional
 
 
+class ImageMarker(BaseModel):
+    x: int
+    y: int
+    color: str
+    text: str
+
+
+class ImageAnswer(BaseModel):
+    markers: List[ImageMarker]
+
+
 class SurveyCreate(BaseModel):
     name: str
     questions: List[Any]
@@ -26,6 +37,7 @@ class Question(BaseModel):
     image: Optional[str] = None
     scale_points: Optional[int] = None
     imageName: Optional[str] = None
+    markerLabels: Optional[List[str]] = None  # Add this for image marker labels
 
 
 class SurveyDirectCreate(BaseModel):

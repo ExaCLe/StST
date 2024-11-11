@@ -14,15 +14,18 @@ def format_survey_results(survey, responses):
     for i, response in enumerate(responses, 1):
         formatted_text += f"Participant {i}\n{'='*50}\n"
 
-        # Access answers from the dictionary
         for question in survey.questions:
-            q_id = str(survey.questions.index(question))  # Get question index as string
-            answer = response.answers.get(q_id)  # Get answer using question index
+            q_id = str(survey.questions.index(question))
+            answer = response.answers.get(q_id)
 
             formatted_text += f"\nQuestion {int(q_id) + 1}: {question['text']}\n"
 
-            if question["type"] == "ImageQuestion":
+            if question["type"] == "ImageQuestion" and isinstance(answer, list):
                 formatted_text += f"Image coordinates saved in: participant_{i}_question_{int(q_id) + 1}.jpg\n"
+                formatted_text += "Marker details:\n"
+                for idx, marker in enumerate(answer, 1):
+                    if isinstance(marker, dict):
+                        formatted_text += f"Marker {idx} ({marker.get('color', 'unknown')}): {marker.get('text', '')}\n"
             else:
                 formatted_text += f"Answer: {answer}\n"
 
@@ -110,7 +113,6 @@ def format_survey_results_html(survey, responses, processed_images):
             html += f'<h3>Question {int(q_id) + 1}: {question["text"]}</h3>'
 
             if question["type"] == "ImageQuestion":
-                # Find corresponding processed image
                 image_filename = f"participant_{i}_question_{int(q_id) + 1}.jpg"
                 image_data = next(
                     (
@@ -126,6 +128,19 @@ def format_survey_results_html(survey, responses, processed_images):
                     html += f'<div class="image-response">'
                     html += f'<img src="data:image/jpeg;base64,{b64_image}" alt="Response image" />'
                     html += "</div>"
+
+                    # Add marker text responses
+                    if isinstance(answer, list):
+                        html += '<div class="marker-responses">'
+                        for idx, marker in enumerate(answer, 1):
+                            if isinstance(marker, dict):
+                                html += f"""
+                                <div class="marker-response" style="margin: 1rem 0; padding: 1rem; border-left: 4px solid #{color_to_hex(marker.get('color', 'gray'))}">
+                                    <strong>Marker {idx} ({marker.get('color', 'unknown')})</strong>
+                                    <p style="margin: 0.5rem 0; white-space: pre-wrap;">{marker.get('text', '')}</p>
+                                </div>
+                                """
+                        html += "</div>"
             else:
                 html += f'<div class="answer">{answer}</div>'
 
@@ -144,6 +159,16 @@ def process_image_responses(survey, responses, image_data):
 
     image_files = []
 
+    # Color mapping for PIL
+    color_map = {
+        "blue": (59, 130, 246),  # Tailwind blue-500
+        "red": (239, 68, 68),  # Tailwind red-500
+        "green": (34, 197, 94),  # Tailwind green-500
+        "purple": (147, 51, 234),  # Tailwind purple-500
+        "pink": (236, 72, 153),  # Tailwind pink-500
+        "yellow": (234, 179, 8),  # Tailwind yellow-500
+    }
+
     for i, response in enumerate(responses, 1):
         for q_idx, question in enumerate(survey.questions):
             if question["type"] == "ImageQuestion":
@@ -160,18 +185,21 @@ def process_image_responses(survey, responses, image_data):
                     img = PILImage.open(io.BytesIO(img_record.image_data))
                     draw = ImageDraw.Draw(img)
 
-                    # Draw all points in the answer list
+                    # Draw all points with their respective colors
                     point_size = 5
-                    for point in answer:
-                        if isinstance(point, dict) and "x" in point and "y" in point:
+                    for marker in answer:
+                        if isinstance(marker, dict) and "x" in marker and "y" in marker:
+                            color = color_map.get(
+                                marker["color"], (255, 0, 0)
+                            )  # Default to red if color not found
                             draw.ellipse(
                                 [
-                                    point["x"] - point_size,
-                                    point["y"] - point_size,
-                                    point["x"] + point_size,
-                                    point["y"] + point_size,
+                                    marker["x"] - point_size,
+                                    marker["y"] - point_size,
+                                    marker["x"] + point_size,
+                                    marker["y"] + point_size,
                                 ],
-                                fill="red",
+                                fill=color,
                             )
 
                     img_byte_arr = io.BytesIO()
@@ -185,6 +213,19 @@ def process_image_responses(survey, responses, image_data):
                     )
 
     return image_files
+
+
+def color_to_hex(color_name):
+    color_map = {
+        "blue": "3B82F6",  # Tailwind blue-500
+        "red": "EF4444",  # Tailwind red-500
+        "green": "22C55E",  # Tailwind green-500
+        "purple": "9333EA",  # Tailwind purple-500
+        "pink": "EC4899",  # Tailwind pink-500
+        "yellow": "EAB308",  # Tailwind yellow-500
+        "gray": "6B7280",  # Default fallback
+    }
+    return color_map.get(color_name, "6B7280")
 
 
 def create_results_package(survey, responses, images):

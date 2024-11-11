@@ -11,8 +11,8 @@
     <div v-else>
       <h1 class="text-3xl font-bold mb-8 text-indigo-800">{{ survey?.name || "Lade Umfrage..." }}</h1>
       
-      <div v-if="showConfirmation">
-        <div class="text-center bg-white rounded-lg shadow-md p-6">
+      <div v-if="showConfirmation" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="text-center bg-white rounded-lg shadow-md p-6 max-w-md mx-4">
           <h2 class="text-2xl font-bold mb-4 text-indigo-800">Möchten Sie die Umfrage abschließen?</h2>
           <p class="text-gray-600 mb-6">Sie haben alle Fragen beantwortet. Klicken Sie auf 'Absenden' um Ihre Antworten zu übermitteln.</p>
           <div class="flex justify-center space-x-4">
@@ -24,12 +24,24 @@
             </button>
             <button
               @click="submitSurvey"
-              class="bg-indigo-600 text-white hover:bg-indigo-700 transition duration-300 py-2 px-4 rounded-full"
+              :disabled="isSubmitting"
+              class="bg-indigo-600 text-white hover:bg-indigo-700 transition duration-300 py-2 px-4 rounded-full disabled:opacity-50"
             >
-              Absenden
+              {{ isSubmitting ? 'Wird gesendet...' : 'Absenden' }}
             </button>
           </div>
         </div>
+      </div>
+
+      <div v-else-if="submitted" class="text-center bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-2xl font-bold mb-4 text-green-600">Vielen Dank für Ihre Teilnahme!</h2>
+        <p class="text-gray-600 mb-8">Ihre Antworten wurden erfolgreich gespeichert.</p>
+        <NuxtLink
+          to="/surveys"
+          class="inline-block bg-indigo-600 text-white py-2 px-4 rounded-full hover:bg-indigo-700 transition duration-300"
+        >
+          Zurück zur Übersicht
+        </NuxtLink>
       </div>
 
       <div v-else-if="currentIndex < (survey?.questions?.length || 0)">
@@ -102,6 +114,8 @@ const router = useRouter();
 const config = useRuntimeConfig();
 const loading = ref(true);
 const showConfirmation = ref(false);
+const isSubmitting = ref(false);
+const submitted = ref(false);
 
 const questionComponents = {
   MultipleChoice,
@@ -173,6 +187,9 @@ const prevQuestion = () => {
 };
 
 const submitSurvey = async () => {
+  if (isSubmitting.value) return;
+  
+  isSubmitting.value = true;
   try {
     const response = await $fetch(
       `${config.public.backendUrl}/api/survey/${route.query.name}/response`,
@@ -184,11 +201,15 @@ const submitSurvey = async () => {
         },
       }
     );
+    
+    showConfirmation.value = false;
+    submitted.value = true;
     message.value = response.message || 'Ihre Antworten wurden gespeichert.';
-    currentIndex.value = survey.value.questions.length; // Show completion screen
   } catch (error) {
     console.error(error);
-    message.value = error.message || 'Ein Fehler ist aufgetreten';
+    message.value = 'Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.';
+  } finally {
+    isSubmitting.value = false;
   }
 };
 
@@ -238,5 +259,20 @@ const progressPercentage = computed(() => {
 /* CSS für den Spinner */
 .spinner {
   border-width: 4px;
+}
+
+.fixed {
+  position: fixed;
+}
+
+.inset-0 {
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+}
+
+.z-50 {
+  z-index: 50;
 }
 </style>
