@@ -116,19 +116,25 @@ async def create_survey(survey: SurveyDirectCreate, db=Depends(get_db)):
     questions = []
     images = []
 
-    for row in survey.questions:
-        question = {
-            "text": row.text,
-            "type": row.type,
-        }
+    # Add internal_id to questions
+    for idx, row in enumerate(survey.questions, start=1):
+        question = {"text": row.text, "type": row.type, "internal_id": idx}
+
+        # If there's a condition, it now refers to internal_id directly
+        if row.condition and row.condition.questionId:
+            question["condition"] = {
+                "questionId": int(row.condition.questionId),  # Now using internal_id
+                "expectedAnswer": row.condition.expectedAnswer,
+            }
+
         if question["type"] == "MultipleChoice":
             question["options"] = row.options
         elif question["type"] == "ImageQuestion":
-            question["imageName"] = row.imageName  # Use imageName
+            question["imageName"] = row.imageName
             images.append({"image_name": row.imageName, "image_data": row.image})
         elif question["type"] == "LikertScale":
-            question["scale"] = int(row.scale_points)
-        # For other question types, no additional fields are needed
+            question["scale_points"] = int(row.scale_points)
+
         questions.append(question)
 
     new_survey = Survey(name=survey.title.strip(), questions=questions)
@@ -152,7 +158,10 @@ async def create_survey(survey: SurveyDirectCreate, db=Depends(get_db)):
             db.add(image_record)
         db.commit()
 
-    return {"message": "Survey created successfully"}
+    return {
+        "message": "Survey created successfully",
+        "survey": {"name": new_survey.name, "questions": new_survey.questions},
+    }
 
 
 @app.get("/api/survey/{name}")
@@ -166,22 +175,18 @@ async def get_survey(name: str, db=Depends(get_db)):
     if not survey:
         raise HTTPException(status_code=404, detail="Survey not found")
 
-    # Convert each image's binary data to base64
+    # Add index and ensure internal_id exists
+    for i, question in enumerate(survey.questions):
+        question["index"] = i
+        if "internal_id" not in question:
+            question["internal_id"] = i + 1  # Add internal_id if missing
+
     survey_data = {
         "name": survey.name,
-        "questions": [
-            {
-                **q,
-                # Convert 'scale' to 'scalePoints' for consistency
-                "scalePoints": (
-                    q.get("scale") if q.get("scale") else q.get("scale_points")
-                ),
-            }
-            for q in survey.questions
-        ],
+        "questions": survey.questions,
         "images": [
             {
-                "id": str(image.id),  # UUID as string
+                "id": str(image.id),
                 "name": image.image_name,
                 "data": base64.b64encode(image.image_data).decode("utf-8"),
             }
@@ -258,53 +263,51 @@ async def update_survey(name: str, survey: SurveyDirectCreate, db=Depends(get_db
     if not existing_survey:
         raise HTTPException(status_code=404, detail="Survey not found")
 
-    new_questions = []
-    images_to_update = []
+    questions = []
+    images = []
 
-    # Get existing images
-    existing_images = {img.image_name: img for img in existing_survey.images}
+    # Add internal_id to questions
+    for idx, row in enumerate(survey.questions, start=1):
+        question = {"text": row.text, "type": row.type, "internal_id": idx}
 
-    for row in survey.questions:
-        question = {
-            "text": row.text,
-            "type": row.type,
-        }
+        # If there's a condition, it now refers to internal_id directly
+        if row.condition and row.condition.questionId:
+            question["condition"] = {
+                "questionId": int(row.condition.questionId),  # Using internal_id
+                "expectedAnswer": row.condition.expectedAnswer,
+            }
 
         if question["type"] == "MultipleChoice":
             question["options"] = row.options
         elif question["type"] == "ImageQuestion":
             question["imageName"] = row.imageName
-            # Only process image if it's new or changed (contains base64 data)
-            if row.image and row.image.startswith("data:image"):
-                images_to_update.append(
-                    {"image_name": row.imageName, "image_data": row.image}
-                )
+            images.append({"image_name": row.imageName, "image_data": row.image})
         elif question["type"] == "LikertScale":
-            # Use scale_points consistently in the database
-            question["scale_points"] = row.scale_points
+            question["scale_points"] = int(row.scale_points)
 
-        new_questions.append(question)
+        questions.append(question)
 
     # Update survey properties
     existing_survey.name = survey.title.strip()
-    existing_survey.questions = new_questions
+    existing_survey.questions = questions
 
-    # Update only changed images
-    for image in images_to_update:
-        # Remove old image if it exists
-        if image["image_name"] in existing_images:
-            db.delete(existing_images[image["image_name"]])
+    # Remove all existing images
+    db.query(Image).filter(Image.survey_id == existing_survey.id).delete()
 
-        # Process and add new image
-        image_data = image["image_data"].split(",", 1)[1]
-        image_data = base64.b64decode(image_data)
-
-        image_record = Image(
-            survey_id=existing_survey.id,
-            image_data=image_data,
-            image_name=image["image_name"],
-        )
-        db.add(image_record)
+    # Add new images
+    if images:
+        for image in images:
+            image_data = image["image_data"]
+            # Remove the data URL prefix if present
+            if image_data.startswith("data:image"):
+                image_data = image_data.split(",", 1)[1]
+            image_data = base64.b64decode(image_data)
+            image_record = Image(
+                survey_id=existing_survey.id,
+                image_data=image_data,
+                image_name=image["image_name"],
+            )
+            db.add(image_record)
 
     db.commit()
     return {"message": "Survey updated successfully"}

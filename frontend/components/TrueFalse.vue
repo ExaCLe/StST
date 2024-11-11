@@ -6,7 +6,8 @@
         <input 
           type="radio" 
           :value="true" 
-          v-model="localAnswer" 
+          :checked="localAnswer === true"
+          @change="handleChange(true)" 
           class="form-radio text-indigo-600"
         >
         <span class="ml-2">Ja</span>
@@ -15,7 +16,8 @@
         <input 
           type="radio" 
           :value="false" 
-          v-model="localAnswer" 
+          :checked="localAnswer === false"
+          @change="handleChange(false)" 
           class="form-radio text-indigo-600"
         >
         <span class="ml-2">Nein</span>
@@ -25,7 +27,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue';
+import { ref, watch } from 'vue';
 
 const props = defineProps({
   question: Object,
@@ -35,15 +37,13 @@ const props = defineProps({
 const emit = defineEmits(['answer']);
 const localAnswer = ref(null);
 
-onMounted(() => {
-  // Convert string 'True'/'False' to boolean
-  if (props.initialAnswer) {
-    localAnswer.value = props.initialAnswer === 'True';
-  }
-});
+// Initialize answer when component is created
+watch(() => props.initialAnswer, (newVal) => {
+  localAnswer.value = newVal === 'True' ? true : newVal === 'False' ? false : null;
+}, { immediate: true });
 
-watch(localAnswer, (newVal) => {
-  // Convert boolean back to string for emit
-  emit('answer', newVal ? 'True' : 'False');
-});
+const handleChange = (value) => {
+  localAnswer.value = value;
+  emit('answer', value ? 'True' : 'False');
+};
 </script>
