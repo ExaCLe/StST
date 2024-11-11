@@ -11,17 +11,42 @@
         class="max-w-full h-auto rounded-lg shadow-md"
         ref="imageRef"
       />
+      <!-- Remove the marker number label -->
       <div
-        v-for="(coord, index) in displayCoordinates"
+        v-for="(marker, index) in displayCoordinates"
         :key="index"
-        :style="{
-          left: `calc(${coord.x}px + ${offset.left}px - 12px)`,
-          top: `calc(${coord.y}px + ${offset.top}px - 24px)`
-        }"
         class="absolute transform"
-        @click="removeMarker(index)"
+        :style="{
+          left: `calc(${marker.x}px + ${offset.left}px - 12px)`,
+          top: `calc(${marker.y}px + ${offset.top}px - 24px)`
+        }"
       >
-        <MapPin class="w-6 h-6 text-red-500" />
+        <MapPin :class="`w-6 h-6 text-${marker.color}-500`" />
+      </div>
+
+      <!-- Updated marker list with textareas -->
+      <div class="mt-4 space-y-4">
+        <div v-for="(marker, index) in coordinates" :key="index" 
+             class="flex items-start space-x-3 bg-white p-3 rounded-lg shadow-sm">
+          <div class="flex-shrink-0 mt-1">
+            <MapPin :class="`w-5 h-5 text-${availableColors[index].class}-500`" />
+          </div>
+          <div class="flex-grow">
+            <textarea
+              v-model="marker.text"
+              :placeholder="getPlaceholder(index)"
+              class="w-full min-h-[80px] border rounded-md px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              @input="emitAnswer"
+            ></textarea>
+          </div>
+          <button
+            @click="removeMarker(index)"
+            class="flex-shrink-0 text-red-500 hover:text-red-700 mt-1"
+            title="Markierung entfernen"
+          >
+            <Trash2 class="w-5 h-5" />
+          </button>
+        </div>
       </div>
 
       <!-- Desktop Toolbar -->
@@ -139,13 +164,24 @@ const currentImageWidth = ref(0);
 const currentImageHeight = ref(0);
 const isMobile = ref(false);
 
+const availableColors = [
+  { name: 'blaue', class: 'blue' },    // #3B82F6
+  { name: 'rote', class: 'red' },      // #EF4444
+  { name: 'grüne', class: 'green' },   // #22C55E
+  { name: 'lila', class: 'purple' },  // #9333EA
+  { name: 'pinke', class: 'pink' },    // #EC4899
+  { name: 'gelbe', class: 'yellow' },  // #EAB308
+];
+
 const displayCoordinates = computed(() => {
   fullscreenTrigger.value;
   if (!imageRef.value) return [];
 
-  return coordinates.value.map(coord => ({
+  return coordinates.value.map((coord, index) => ({
     x: (coord.x / originalImageDimensions.value.width) * currentImageWidth.value,
     y: (coord.y / originalImageDimensions.value.height) * currentImageHeight.value,
+    color: availableColors[index].class,
+    text: coord.text
   }));
 });
 
@@ -187,6 +223,7 @@ const setToolbarPosition = () => {
 
 const handleClick = event => {
   if (currentTool.value !== 'stamp') return;
+  if (coordinates.value.length >= availableColors.length) return;
 
   const rect = imageRef.value.getBoundingClientRect();
 
@@ -203,8 +240,8 @@ const handleClick = event => {
       y >= 0 &&
       y <= originalImageDimensions.value.height
     ) {
-      coordinates.value.push({ x, y });
-      emit('answer', coordinates.value);
+      coordinates.value.push({ x, y, text: '' });
+      emitAnswer();
     }
   } else {
     if (
@@ -228,8 +265,8 @@ const handleClick = event => {
       y >= 0 &&
       y <= originalImageDimensions.value.height
     ) {
-      coordinates.value.push({ x, y });
-      emit('answer', coordinates.value);
+      coordinates.value.push({ x, y, text: '' });
+      emitAnswer();
     }
   }
 };
@@ -239,15 +276,15 @@ const setTool = tool => {
 };
 
 const removeMarker = index => {
-  if (currentTool.value === 'eraser') {
+  if (currentTool.value === 'eraser' || currentTool.value === 'stamp') {
     coordinates.value.splice(index, 1);
-    emit('answer', coordinates.value);
+    emitAnswer();
   }
 };
 
 const clearAllMarkers = () => {
   coordinates.value = [];
-  emit('answer', coordinates.value);
+  emitAnswer();
 };
 
 const toggleFullScreen = () => {
@@ -383,6 +420,22 @@ const stopDragging = () => {
   moved = false;
 };
 
+const emitAnswer = () => {
+  emit('answer', coordinates.value.map((coord, index) => ({
+    x: coord.x,
+    y: coord.y,
+    color: availableColors[index].class,
+    text: coord.text
+  })));
+};
+
+const getPlaceholder = (index) => {
+  if (props.question.markerLabels?.[index]) {
+    return props.question.markerLabels[index];
+  }
+  return `Notizen für ${availableColors[index].name} Markierung`;
+};
+
 onMounted(() => {
   coordinates.value = props.initialAnswer || [];
   document.addEventListener('fullscreenchange', handleFullScreenChange);
@@ -451,5 +504,18 @@ onUnmounted(() => {
 
 .drag-handle:active {
   cursor: grabbing;
+}
+
+/* Remove the marker-label class since we're not using it anymore */
+.marker-label {
+  display: none;
+}
+
+/* Add styles for textarea */
+textarea {
+  resize: vertical;
+  min-height: 80px;
+  font-size: 0.875rem;
+  line-height: 1.5;
 }
 </style>
