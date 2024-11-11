@@ -20,6 +20,7 @@
           left: `calc(${marker.x}px + ${offset.left}px - 12px)`,
           top: `calc(${marker.y}px + ${offset.top}px - 24px)`
         }"
+        @click.stop="handleMarkerClick(index)"
       >
         <MapPin :class="`w-6 h-6 text-${marker.color}-500`" />
       </div>
@@ -433,6 +434,13 @@ const getPlaceholder = (index) => {
     return props.question.markerLabels[index];
   }
   return `Notizen für ${availableColors[index].name} Markierung`;
+};
+
+const handleMarkerClick = (index) => {
+  if (currentTool.value === 'eraser') {
+    coordinates.value.splice(index, 1);
+    emitAnswer();
+  }
 };
 
 onMounted(() => {
