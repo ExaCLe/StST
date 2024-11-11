@@ -116,11 +116,13 @@
           <div class="mt-2">
             <label class="block text-sm font-medium text-gray-700 mb-2">Reference Image</label>
             <div class="flex items-center justify-center w-full">
-              <label class="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
-                <div class="flex flex-col items-center justify-center pt-5 pb-6" v-if="!question.referenceImage">
-                  <UIcon name="heroicons-outline:upload" class="w-10 h-10 mb-3 text-gray-400" />
-                  <p class="mb-2 text-sm text-gray-500"><span class="font-semibold">Click to upload</span> or drag and drop</p>
-                  <p class="text-xs text-gray-500">PNG, JPG or GIF (MAX. 800x400px)</p>
+              <label :class="[
+                'flex flex-col items-center justify-center w-full border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100',
+                !question.referenceImage ? 'h-24' : 'h-64' // Smaller height when empty
+              ]">
+                <div class="flex flex-col items-center justify-center py-3" v-if="!question.referenceImage">
+                  <UIcon name="heroicons-outline:upload" class="w-6 h-6 mb-2 text-gray-400" />
+                  <p class="text-sm text-gray-500">Click to upload reference image</p>
                 </div>
                 <div v-else class="relative w-full h-full">
                   <img :src="question.referenceImage" alt="Uploaded image" class="w-full h-full object-cover rounded-lg" />

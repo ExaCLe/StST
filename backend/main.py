@@ -325,7 +325,6 @@ async def update_survey(name: str, survey: SurveyDirectCreate, db=Depends(get_db
     # Add new images
     if images:
         for image in images:
-            print(image)
             image_data = image["image_data"]
             # Remove the data URL prefix if present
             if image_data.startswith("data:image"):
