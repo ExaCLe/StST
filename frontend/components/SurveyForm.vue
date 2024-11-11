@@ -37,7 +37,7 @@
         <li v-for="(question, index) in formData.questions" :key="question.id" class="bg-gray-50 p-4 rounded-md shadow">
           <div class="flex justify-between items-start mb-2">
             <h3 class="text-lg font-medium text-gray-800">
-              #{{ index + 1 }} - {{ question.type }} Question
+              #{{ question.internal_id }} - {{ question.type }} Question
             </h3>
             <button @click="removeQuestion(index)" class="text-red-500 hover:text-red-700" title="Remove question">
               <UIcon name="heroicons-outline:trash" class="w-5 h-5" />
