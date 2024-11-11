@@ -7,7 +7,8 @@
           <input
             type="radio"
             :value="option.value"
-            v-model="selectedPoint"
+            :checked="selectedPoint === option.value"
+            @change="handleChange(option.value)"
             class="form-radio text-indigo-600"
           />
           <span>{{ option.label }}</span>
@@ -22,7 +23,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue';
+import { ref, watch } from 'vue';
 
 const props = defineProps({
   question: Object,
@@ -32,15 +33,16 @@ const props = defineProps({
 const emit = defineEmits(['answer']);
 const selectedPoint = ref(null);
 
-onMounted(() => {
-  selectedPoint.value = props.initialAnswer || null;
-});
+// Initialize answer when component is created
+watch(() => props.initialAnswer, (newVal) => {
+  selectedPoint.value = typeof newVal === 'number' ? newVal : null;
+}, { immediate: true });
 
-watch(selectedPoint, (newVal) => {
-  emit('answer', newVal);
-});
+const handleChange = (value) => {
+  selectedPoint.value = value;
+  emit('answer', value);
+};
 
-// Define options for the Likert scale based on the scale length in the question
 const options = props.question.scale_points === 5
   ? [{ value: 1, label: '1' }, { value: 2, label: '2' }, { value: 3, label: '3' }, { value: 4, label: '4' }, { value: 5, label: '5' }]
   : [{ value: 1, label: '1' }, { value: 2, label: '2' }, { value: 3, label: '3' }, { value: 4, label: '4' }, { value: 5, label: '5' }, { value: 6, label: '6' }, { value: 7, label: '7' }];

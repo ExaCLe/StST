@@ -71,7 +71,11 @@ const loadSurveyData = async () => {
     const questionsWithImages = data.questions.map((q, index) => {
       const questionWithId = {
         ...q,
-        id: Date.now() + index // Ensure unique ID for each question
+        id: Date.now() + index, // Ensure unique ID for each question
+        condition: q.condition || { // Initialize condition if it doesn't exist
+          questionId: '',
+          expectedAnswer: 'true'
+        }
       };
       
       if (q.type === 'ImageQuestion' && q.imageName && imageMap[q.imageName]) {

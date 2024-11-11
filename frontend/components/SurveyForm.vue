@@ -177,10 +177,17 @@ const props = defineProps({
 const showPassword = ref(false);
 const questionTypes = ['MultipleChoice', 'ImageQuestion', 'LikertScale', 'FreeAnswer', 'TrueFalse'];
 
+// Ensure all questions have conditions when initializing formData
 const formData = reactive({
   adminPassword: props.initialData.adminPassword,
   surveyTitle: props.initialData.surveyTitle,
-  questions: [...props.initialData.questions]
+  questions: props.initialData.questions.map(q => ({
+    ...q,
+    condition: q.condition || {
+      questionId: '',
+      expectedAnswer: 'true'
+    }
+  }))
 });
 
 const togglePasswordVisibility = () => {
@@ -276,7 +283,8 @@ const handleSubmit = () => {
 };
 
 const showConditionOptions = (index) => {
-  return index > 0; // Don't show for first question
+  // Only show conditions for non-first questions that are not Headers
+  return index > 0 && formData.questions[index].type !== 'Header';
 };
 
 const getPreviousTrueFalseQuestions = (currentIndex) => {

@@ -46,6 +46,7 @@
             :is="getComponent(currentQuestion?.type)"
             :question="currentQuestion"
             :initialAnswer="answers[currentIndex]"
+            :key="`${currentIndex}-${currentQuestion?.internal_id}`"
             @answer="updateAnswer(currentIndex, $event)"
           />
         </div>
@@ -147,7 +148,28 @@ const nextQuestion = () => {
 };
 
 const prevQuestion = () => {
-  if (currentIndex.value > 0) currentIndex.value--;
+  let prevIndex = currentIndex.value - 1;
+  while (prevIndex >= 0) {
+    const prevQuestion = survey.value.questions[prevIndex];
+    if (!prevQuestion.condition) {
+      currentIndex.value = prevIndex;
+      return;
+    }
+    
+    const conditionQuestion = survey.value.questions.find(
+      q => q.internal_id === prevQuestion.condition.questionId
+    );
+    const conditionQuestionIndex = survey.value.questions.indexOf(conditionQuestion);
+    const answer = answers.value[conditionQuestionIndex];
+    
+    if (answer?.toLowerCase() === prevQuestion.condition.expectedAnswer?.toLowerCase()) {
+      currentIndex.value = prevIndex;
+      return;
+    }
+    prevIndex--;
+  }
+  // If we get here, we've reached the start
+  currentIndex.value = 0;
 };
 
 const submitSurvey = async () => {
