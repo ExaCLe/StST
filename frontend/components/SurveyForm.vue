@@ -1,26 +1,6 @@
 <template>
   <div class="survey-creator bg-white p-6 rounded-lg shadow-lg">
     <div class="mb-6">
-      <label for="admin-password" class="block text-sm font-medium text-gray-700 mb-2">Admin Password</label>
-      <div class="relative">
-        <input
-          id="admin-password"
-          v-model="formData.adminPassword"
-          :type="showPassword ? 'text' : 'password'"
-          class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 pr-10"
-          placeholder="Enter admin password"
-        >
-        <button 
-          @click="togglePasswordVisibility" 
-          type="button" 
-          class="absolute inset-y-0 right-0 pr-3 flex items-center"
-        >
-          <UIcon :name="showPassword ? 'heroicons-outline:eye-off' : 'heroicons-outline:eye'" class="h-5 w-5 text-gray-400" />
-        </button>
-      </div>
-    </div>
-    
-    <div class="mb-6">
       <label for="survey-title" class="block text-sm font-medium text-gray-700 mb-2">Survey Title</label>
       <input
         id="survey-title"
@@ -39,9 +19,27 @@
             <h3 class="text-lg font-medium text-gray-800">
               #{{ question.internal_id }} - {{ question.type }} Question
             </h3>
-            <button @click="removeQuestion(index)" class="text-red-500 hover:text-red-700" title="Remove question">
-              <UIcon name="heroicons-outline:trash" class="w-5 h-5" />
-            </button>
+            <div class="flex items-center gap-2">
+              <button 
+                v-if="index > 0"
+                @click="moveQuestion(index, 'up')" 
+                class="text-gray-500 hover:text-gray-700"
+                title="Move up"
+              >
+                <UIcon name="heroicons-outline:arrow-up" class="w-5 h-5" />
+              </button>
+              <button 
+                v-if="index < formData.questions.length - 1"
+                @click="moveQuestion(index, 'down')" 
+                class="text-gray-500 hover:text-gray-700"
+                title="Move down"
+              >
+                <UIcon name="heroicons-outline:arrow-down" class="w-5 h-5" />
+              </button>
+              <button @click="removeQuestion(index)" class="text-red-500 hover:text-red-700" title="Remove question">
+                <UIcon name="heroicons-outline:trash" class="w-5 h-5" />
+              </button>
+            </div>
           </div>
           <!-- Question Text Input -->
           <input
@@ -141,6 +139,26 @@
           class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition duration-300"
         >
           Add {{ type }}
+        </button>
+      </div>
+    </div>
+
+    <div class="mb-6">
+      <label for="admin-password" class="block text-sm font-medium text-gray-700 mb-2">Admin Password</label>
+      <div class="relative">
+        <input
+          id="admin-password"
+          v-model="formData.adminPassword"
+          :type="showPassword ? 'text' : 'password'"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 pr-10"
+          placeholder="Enter admin password"
+        >
+        <button 
+          @click="togglePasswordVisibility" 
+          type="button" 
+          class="absolute inset-y-0 right-0 pr-3 flex items-center"
+        >
+          <UIcon :name="showPassword ? 'heroicons-outline:eye-off' : 'heroicons-outline:eye'" class="h-5 w-5 text-gray-400" />
         </button>
       </div>
     </div>
@@ -307,6 +325,32 @@ const getPreviousTrueFalseQuestions = (currentIndex) => {
       ...q, 
       displayIndex: q.internal_id || formData.questions.indexOf(q) + 1 
     }));
+};
+
+const moveQuestion = (index, direction) => {
+  const newIndex = direction === 'up' ? index - 1 : index + 1;
+  if (newIndex >= 0 && newIndex < formData.questions.length) {
+    // Swap questions
+    const temp = formData.questions[index];
+    formData.questions[index] = formData.questions[newIndex];
+    formData.questions[newIndex] = temp;
+    
+    // Swap internal_ids to maintain reference integrity for conditions
+    const tempId = formData.questions[index].internal_id;
+    formData.questions[index].internal_id = formData.questions[newIndex].internal_id;
+    formData.questions[newIndex].internal_id = tempId;
+    
+    // Update conditions that might reference these questions
+    formData.questions.forEach(q => {
+      if (q.condition && q.condition.questionId) {
+        if (q.condition.questionId === formData.questions[index].internal_id) {
+          q.condition.questionId = formData.questions[newIndex].internal_id;
+        } else if (q.condition.questionId === formData.questions[newIndex].internal_id) {
+          q.condition.questionId = formData.questions[index].internal_id;
+        }
+      }
+    });
+  }
 };
 </script>
 
