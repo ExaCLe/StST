@@ -31,6 +31,12 @@
                   <span>Neue Umfrage</span>
                 </NuxtLink>
                 <NuxtLink 
+                  to="/admin/edit-survey" 
+                  class="flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-500 hover:text-white">
+                  <UIcon name="i-heroicons-pencil" />
+                  <span>Umfrage Bearbeiten</span>
+                </NuxtLink>
+                <NuxtLink 
                 to="/admin/RequestResults" 
                 class="flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-500 hover:text-white">
                 <UIcon name="i-heroicons-document-duplicate-20-solid" />
@@ -74,6 +80,12 @@
                 class="flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-500 hover:text-white">
                 <UIcon name="i-heroicons-plus-circle" />
                 <span>Neue Umfrage</span>
+              </NuxtLink>
+              <NuxtLink 
+                to="/admin/edit-survey" 
+                class="flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-500 hover:text-white">
+                <UIcon name="i-heroicons-pencil" />
+                <span>Umfrage Bearbeiten</span>
               </NuxtLink>
               <NuxtLink 
                 to="/admin/RequestResults" 
