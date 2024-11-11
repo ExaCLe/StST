@@ -18,7 +18,7 @@ class Question(BaseModel):
     options: Optional[List[str]] = []
     image: Optional[str] = None  # Base64 image data
     scale_points: Optional[int] = None
-    imageName: Optional[str] = None  # Use imageName consistently
+    imageName: Optional[str] = None
 
 
 class SurveyDirectCreate(BaseModel):

@@ -40,6 +40,12 @@
                   <span class="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform">→</span>
                 </span>
               </NuxtLink>
+              <NuxtLink to="/admin/edit-survey" class="block group">
+                <span class="inline-flex items-center text-sm font-medium">
+                  Umfrage bearbeiten
+                  <span class="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform">→</span>
+                </span>
+              </NuxtLink>
               <NuxtLink to="/admin/RequestResults" class="block group">
                 <span class="inline-flex items-center text-sm font-medium">
                   Ergebnisse abrufen

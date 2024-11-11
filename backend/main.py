@@ -169,7 +169,16 @@ async def get_survey(name: str, db=Depends(get_db)):
     # Convert each image's binary data to base64
     survey_data = {
         "name": survey.name,
-        "questions": survey.questions,
+        "questions": [
+            {
+                **q,
+                # Convert 'scale' to 'scalePoints' for consistency
+                "scalePoints": (
+                    q.get("scale") if q.get("scale") else q.get("scale_points")
+                ),
+            }
+            for q in survey.questions
+        ],
         "images": [
             {
                 "id": str(image.id),  # UUID as string
@@ -238,3 +247,64 @@ async def delete_survey(name: str, password: str, db=Depends(get_db)):
     db.commit()
 
     return {"message": f"Survey '{name}' deleted successfully"}
+
+
+@app.put("/api/update-survey/{name}")
+async def update_survey(name: str, survey: SurveyDirectCreate, db=Depends(get_db)):
+    if survey.adminPassword != os.getenv("ADMIN_PASSWORD"):
+        raise HTTPException(status_code=403, detail="Invalid password")
+
+    existing_survey = db.query(Survey).filter(Survey.name == name).first()
+    if not existing_survey:
+        raise HTTPException(status_code=404, detail="Survey not found")
+
+    new_questions = []
+    images_to_update = []
+
+    # Get existing images
+    existing_images = {img.image_name: img for img in existing_survey.images}
+
+    for row in survey.questions:
+        question = {
+            "text": row.text,
+            "type": row.type,
+        }
+
+        if question["type"] == "MultipleChoice":
+            question["options"] = row.options
+        elif question["type"] == "ImageQuestion":
+            question["imageName"] = row.imageName
+            # Only process image if it's new or changed (contains base64 data)
+            if row.image and row.image.startswith("data:image"):
+                images_to_update.append(
+                    {"image_name": row.imageName, "image_data": row.image}
+                )
+        elif question["type"] == "LikertScale":
+            # Use scale_points consistently in the database
+            question["scale_points"] = row.scale_points
+
+        new_questions.append(question)
+
+    # Update survey properties
+    existing_survey.name = survey.title.strip()
+    existing_survey.questions = new_questions
+
+    # Update only changed images
+    for image in images_to_update:
+        # Remove old image if it exists
+        if image["image_name"] in existing_images:
+            db.delete(existing_images[image["image_name"]])
+
+        # Process and add new image
+        image_data = image["image_data"].split(",", 1)[1]
+        image_data = base64.b64decode(image_data)
+
+        image_record = Image(
+            survey_id=existing_survey.id,
+            image_data=image_data,
+            image_name=image["image_name"],
+        )
+        db.add(image_record)
+
+    db.commit()
+    return {"message": "Survey updated successfully"}
