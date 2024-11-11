@@ -185,8 +185,14 @@ def process_image_responses(survey, responses, image_data):
                     img = PILImage.open(io.BytesIO(img_record.image_data))
                     draw = ImageDraw.Draw(img)
 
+                    # Calculate marker size based on image dimensions
+                    img_width, img_height = img.size
+                    diagonal = (img_width**2 + img_height**2) ** 0.5
+                    point_size = max(
+                        min(int(diagonal * 0.005), 20), 5
+                    )  # 0.5% of diagonal, bounded between 5 and 20 pixels
+
                     # Draw all points with their respective colors
-                    point_size = 5
                     for marker in answer:
                         if isinstance(marker, dict) and "x" in marker and "y" in marker:
                             color = color_map.get(
