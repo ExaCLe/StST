@@ -163,7 +163,13 @@
       </div>
     </div>
 
-    <div class="flex justify-end">
+    <div class="flex justify-end gap-2">
+      <button 
+        @click="handlePreview" 
+        class="bg-indigo-500 text-white px-6 py-2 rounded-md hover:bg-indigo-600 transition duration-300"
+      >
+        Preview Survey
+      </button>
       <button 
         @click="handleSubmit" 
         class="bg-green-500 text-white px-6 py-2 rounded-md hover:bg-green-600 transition duration-300"
@@ -351,6 +357,44 @@ const moveQuestion = (index, direction) => {
       }
     });
   }
+};
+
+const emit = defineEmits(['preview']);
+
+const handlePreview = () => {
+  // Prepare preview data using the same sanitization as submit
+  const previewData = {
+    name: formData.surveyTitle,
+    questions: formData.questions.map(q => {
+      const question = {
+        text: q.text,
+        type: q.type,
+        internal_id: q.internal_id,
+        condition: {
+          questionId: q.condition.questionId || null,
+          expectedAnswer: q.condition.expectedAnswer
+        }
+      };
+      
+      if (q.type === 'MultipleChoice') {
+        question.options = q.options;
+      } else if (q.type === 'ImageQuestion') {
+        question.imageName = q.imageName;
+        question.image = q.image;
+      } else if (q.type === 'LikertScale') {
+        question.scale_points = parseInt(q.scalePoints) || 5;
+      }
+      return question;
+    }),
+    images: formData.questions
+      .filter(q => q.type === 'ImageQuestion' && q.image)
+      .map(q => ({
+        name: q.imageName,
+        data: q.image.split(',')[1] // Remove data URL prefix
+      }))
+  };
+  
+  emit('preview', previewData);
 };
 </script>
 

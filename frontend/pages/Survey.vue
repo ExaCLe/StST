@@ -105,6 +105,18 @@ import FreeAnswer from '~/components/FreeAnswer.vue';
 import LikertScale from '~/components/LikertScale.vue';
 import ImageQuestion from '~/components/ImageQuestion.vue';
 
+// Add to props
+const props = defineProps({
+  survey: {
+    type: Object,
+    default: null
+  },
+  previewMode: {
+    type: Boolean,
+    default: false
+  }
+});
+
 const survey = ref(null);
 const answers = ref({});
 const message = ref('');
@@ -191,17 +203,22 @@ const submitSurvey = async () => {
   
   isSubmitting.value = true;
   try {
-    const response = await $fetch(
-      `${config.public.backendUrl}/api/survey/${route.query.name}/response`,
-      {
-        method: 'POST',
-        body: JSON.stringify({ answers: answers.value }),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
-    );
-    
+    let response = null;
+    if (!props.previewMode) {
+      response = await $fetch(
+        `${config.public.backendUrl}/api/survey/${route.query.name}/response`,
+        {
+          method: 'POST',
+          body: JSON.stringify({ answers: answers.value }),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+      
+    } else {
+      response = { message: 'Preview mode: Antworten wurden aufgrund der Vorschau nicht gespeichert, aber die Umfrage wurde erfolgreich beendet.' };
+    }
     showConfirmation.value = false;
     submitted.value = true;
     message.value = response.message || 'Ihre Antworten wurden gespeichert.';
@@ -213,6 +230,7 @@ const submitSurvey = async () => {
   }
 };
 
+// Modify handleNextOrSubmit
 const handleNextOrSubmit = () => {
   if (isLastQuestion.value) {
     showConfirmation.value = true;
@@ -221,7 +239,15 @@ const handleNextOrSubmit = () => {
   }
 };
 
+// Modify onMounted
 onMounted(async () => {
+  if (props.previewMode && props.survey) {
+    // Set survey data directly from props in preview mode
+    survey.value = props.survey;
+    loading.value = false;
+    return;
+  }
+
   try {
     const response = await $fetch(
       `${config.public.backendUrl}/api/survey/${route.query.name}`

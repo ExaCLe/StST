@@ -5,6 +5,7 @@
       :initialData="{ adminPassword: '', surveyTitle: '', questions: [] }"
       submitButtonText="Create Survey"
       :onSubmit="createSurvey"
+      @preview="handlePreview"
     />
   </div>
 </template>
@@ -12,8 +13,10 @@
 <script setup>
 import { useRuntimeConfig } from '#imports';
 import SurveyForm from '~/components/SurveyForm.vue';
+import { useSurveyPreview } from '~/composables/useSurveyPreview';
 
 const config = useRuntimeConfig();
+const { openPreview } = useSurveyPreview();
 
 const createSurvey = async (formData) => {
   try {
@@ -36,5 +39,9 @@ const createSurvey = async (formData) => {
   } catch (error) {
     alert('Failed to create survey: ' + error.message);
   }
+};
+
+const handlePreview = (surveyData) => {
+  openPreview(surveyData);
 };
 </script>

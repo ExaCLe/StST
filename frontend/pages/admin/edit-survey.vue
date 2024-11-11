@@ -25,6 +25,7 @@
         :initialData="surveyData"
         submitButtonText="Update Survey"
         :onSubmit="updateSurvey"
+        @preview="handlePreview"
       />
     </div>
   </div>
@@ -34,8 +35,10 @@
 import { ref, onMounted } from 'vue';
 import SurveyForm from '~/components/SurveyForm.vue';
 import { useRuntimeConfig } from '#imports';
+import { useSurveyPreview } from '~/composables/useSurveyPreview'; // Add this import
 
 const config = useRuntimeConfig();
+const { openPreview } = useSurveyPreview(); // Add this line
 const loading = ref(true);
 const surveys = ref([]);
 const selectedSurvey = ref('');
@@ -119,6 +122,10 @@ const updateSurvey = async (formData) => {
   } catch (error) {
     alert(error.message);
   }
+};
+
+const handlePreview = (surveyData) => {
+  openPreview(surveyData);
 };
 
 onMounted(loadSurveys);
