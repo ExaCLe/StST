@@ -117,7 +117,12 @@ async def create_survey(survey: SurveyDirectCreate, db=Depends(get_db)):
 
     # Add internal_id to questions
     for idx, row in enumerate(survey.questions, start=1):
-        question = {"text": row.text, "type": row.type, "internal_id": idx}
+        question = {
+            "text": row.text,
+            "type": row.type,
+            "internal_id": idx,
+            "required": row.required,
+        }
 
         # If there's a condition, it now refers to internal_id directly
         if row.condition and row.condition.questionId:
@@ -287,7 +292,12 @@ async def update_survey(name: str, survey: SurveyDirectCreate, db=Depends(get_db
 
     # Add internal_id to questions
     for idx, row in enumerate(survey.questions, start=1):
-        question = {"text": row.text, "type": row.type, "internal_id": idx}
+        question = {
+            "text": row.text,
+            "type": row.type,
+            "internal_id": idx,
+            "required": row.required,
+        }
 
         # If there's a condition, it now refers to internal_id directly
         if row.condition and row.condition.questionId:

@@ -40,6 +40,7 @@ class Question(BaseModel):
     markerLabels: Optional[List[str]] = None  # Add this for image marker labels
     referenceImage: Optional[str] = None  # Add this for reference images
     referenceImageName: Optional[str] = None  # Add this for reference image names
+    required: Optional[bool] = False  # Add this line
 
 
 class SurveyDirectCreate(BaseModel):
