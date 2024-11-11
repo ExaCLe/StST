@@ -54,9 +54,14 @@
           <button
             @click.stop="setTool('stamp')"
             @touchend.stop.prevent="handleButtonTouch($event, () => setTool('stamp'))"
-            class="bg-green-500 text-white p-2 rounded-full hover:bg-green-600 transition duration-300"
-            :class="{ 'ring-2 ring-offset-2 ring-green-500': currentTool === 'stamp' }"
-            title="Add marker"
+            class="bg-green-500 text-white p-2 rounded-full transition duration-300 tooltip-button"
+            :class="{
+              'ring-2 ring-offset-2 ring-green-500': currentTool === 'stamp',
+              'hover:bg-green-600': hasAvailableColors,
+              'opacity-50 cursor-not-allowed': !hasAvailableColors
+            }"
+            :disabled="!hasAvailableColors"
+            :data-tooltip="hasAvailableColors ? 'Markierung hinzufügen' : 'Bitte entfernen Sie eine bestehende Markierung, um eine neue hinzuzufügen'"
           >
             <MapPin class="w-5 h-5" />
           </button>
@@ -86,9 +91,14 @@
           <button
             @click.stop="setTool('stamp')"
             @touchend.stop.prevent="handleButtonTouch($event, () => setTool('stamp'))"
-            class="bg-green-500 text-white p-2 rounded-full hover:bg-green-600 transition duration-300"
-            :class="{ 'ring-2 ring-offset-2 ring-green-500': currentTool === 'stamp' }"
-            title="Add marker"
+            class="bg-green-500 text-white p-2 rounded-full transition duration-300 tooltip-button"
+            :class="{
+              'ring-2 ring-offset-2 ring-green-500': currentTool === 'stamp',
+              'hover:bg-green-600': hasAvailableColors,
+              'opacity-50 cursor-not-allowed': !hasAvailableColors
+            }"
+            :disabled="!hasAvailableColors"
+            :data-tooltip="hasAvailableColors ? 'Markierung hinzufügen' : 'Bitte entfernen Sie eine bestehende Markierung, um eine neue hinzuzufügen'"
           >
             <MapPin class="w-5 h-5" />
           </button>
@@ -185,6 +195,12 @@ const displayCoordinates = computed(() => {
     color: coord.colorClass,
     text: coord.text
   }));
+});
+
+const hasAvailableColors = computed(() => {
+  return availableColors.some(color => 
+    !coordinates.value.some(marker => marker.colorClass === color.class)
+  );
 });
 
 const handleImageLoad = async () => {
@@ -563,5 +579,37 @@ textarea {
   min-height: 80px;
   font-size: 0.875rem;
   line-height: 1.5;
+}
+
+button[disabled] {
+  pointer-events: auto !important; /* Enable hover for tooltip */
+}
+
+.tooltip-button {
+  position: relative;
+}
+
+.tooltip-button::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 8px;
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  font-size: 12px;
+  white-space: nowrap;
+  border-radius: 4px;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.1s ease;
+  pointer-events: none;
+  margin-bottom: 5px;
+}
+
+.tooltip-button:hover::after {
+  opacity: 1;
+  visibility: visible;
 }
 </style>
