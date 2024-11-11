@@ -157,7 +157,7 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue';
+import { ref, reactive, onMounted } from 'vue';
 
 const props = defineProps({
   initialData: {
@@ -177,12 +177,23 @@ const props = defineProps({
 const showPassword = ref(false);
 const questionTypes = ['MultipleChoice', 'ImageQuestion', 'LikertScale', 'FreeAnswer', 'TrueFalse'];
 
-// Ensure all questions have conditions when initializing formData
+// Add counter for internal IDs
+const internalIdCounter = ref(1);
+
+// Initialize counter and formData
+onMounted(() => {
+  // Find highest internal_id in existing questions
+  const maxId = props.initialData.questions.reduce((max, q) => 
+    q.internal_id ? Math.max(max, q.internal_id) : max, 0);
+  internalIdCounter.value = maxId + 1;
+});
+
 const formData = reactive({
   adminPassword: props.initialData.adminPassword,
   surveyTitle: props.initialData.surveyTitle,
   questions: props.initialData.questions.map(q => ({
     ...q,
+    internal_id: q.internal_id || 0, // Preserve existing IDs
     condition: q.condition || {
       questionId: '',
       expectedAnswer: 'true'
@@ -199,7 +210,7 @@ const addQuestion = (type) => {
     id: Date.now(),
     type,
     text: '',
-    internal_id: formData.questions.length + 1,
+    internal_id: internalIdCounter.value,
     condition: {
       questionId: '',
       expectedAnswer: 'true'
@@ -216,6 +227,7 @@ const addQuestion = (type) => {
   }
   
   formData.questions.push(question);
+  internalIdCounter.value++;
 };
 
 const removeQuestion = (index) => {
