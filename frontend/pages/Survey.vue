@@ -78,8 +78,13 @@
           </button>
           <button
             @click="handleNextOrSubmit"
-            class="bg-indigo-600 text-white hover:bg-indigo-700 transition duration-300 py-2 px-4 rounded-full"
-            :class="{ 'ml-auto': currentIndex === 0 }"
+            class="bg-indigo-600 text-white hover:bg-indigo-700 transition duration-300 py-2 px-4 rounded-full tooltip-button"
+            :class="{ 
+              'ml-auto': currentIndex === 0,
+              'opacity-50 cursor-not-allowed': !isCurrentQuestionAnswered
+            }"
+            :disabled="!isCurrentQuestionAnswered"
+            :data-tooltip="!isCurrentQuestionAnswered ? `Diese Frage muss beantwortet werden` : ''"
           >
             {{ isLastQuestion ? 'Review & Submit' : 'Next' }}
           </button>
@@ -236,6 +241,8 @@ const submitSurvey = async () => {
 
 // Modify handleNextOrSubmit
 const handleNextOrSubmit = () => {
+  if (!isCurrentQuestionAnswered.value) return;
+  
   if (isLastQuestion.value) {
     showConfirmation.value = true;
   } else {
@@ -287,6 +294,29 @@ const progressPercentage = computed(() => {
   if (!survey.value?.questions?.length) return 0;
   return Math.round((currentIndex.value / (survey.value.questions.length - 1)) * 100);
 });
+
+const isCurrentQuestionAnswered = computed(() => {
+  // If question is not required, always return true
+  if (!currentQuestion.value?.required) return true;
+  
+  const answer = answers.value[currentIndex.value];
+  if (!answer) return false;
+
+  switch (currentQuestion.value?.type) {
+    case 'MultipleChoice':
+      return Array.isArray(answer) ? answer.length > 0 : !!answer;
+    case 'TrueFalse':
+      return answer === true || answer === false;
+    case 'FreeAnswer':
+      return !!answer && answer.trim().length > 0;
+    case 'LikertScale':
+      return typeof answer === 'number';
+    case 'ImageQuestion':
+      return Array.isArray(answer) && answer.length > 0 && answer.every(a => a.text?.trim().length > 0);
+    default:
+      return false;
+  }
+});
 </script>
 
 <style>
@@ -308,5 +338,33 @@ const progressPercentage = computed(() => {
 
 .z-50 {
   z-index: 50;
+}
+
+.tooltip-button {
+  position: relative;
+}
+
+.tooltip-button[disabled]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 8px;
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  font-size: 12px;
+  white-space: nowrap;
+  border-radius: 4px;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.1s ease;
+  pointer-events: none;
+  margin-bottom: 5px;
+}
+
+.tooltip-button[disabled]:hover::after {
+  opacity: 1;
+  visibility: visible;
 }
 </style>

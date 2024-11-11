@@ -42,111 +42,127 @@
             </div>
           </div>
           <!-- Question Text Input -->
-          <input
-            v-if="question.type !== 'Header'"
-            v-model="question.text"
-            type="text"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 mb-2"
-            placeholder="Enter question text"
-          >
-          <!-- Add this inside the question loop after the question text input -->
-          <div v-if="showConditionOptions(index)" class="mt-2 p-2 bg-gray-100 rounded">
-            <label class="block text-sm font-medium text-gray-700 mb-2">Condition</label>
-            <div class="flex gap-2">
-              <select
-                v-model="question.condition.questionId"
-                class="flex-1 px-3 py-2 border border-gray-300 rounded-md"
-              >
-                <option value="">No condition</option>
-                <option
-                  v-for="q in getPreviousTrueFalseQuestions(index)"
-                  :key="q.internal_id"
-                  :value="q.internal_id"
-                >
-                  #{{q.internal_id}} - {{q.text}}
-                </option>
-              </select>
-              <select
-                v-if="question.condition.questionId"
-                v-model="question.condition.expectedAnswer"
-                class="w-24 px-3 py-2 border border-gray-300 rounded-md"
-              >
-                <option value="true">True</option>
-                <option value="false">False</option>
-              </select>
-            </div>
-          </div>
-          <!-- Multiple Choice Options -->
-          <div v-if="question.type === 'MultipleChoice'" class="mt-2">
-            <div v-for="(option, optionIndex) in question.options" :key="optionIndex" class="flex items-center mb-2">
+          <div class="space-y-4">
+            <input
+              v-if="question.type !== 'Header'"
+              v-model="question.text"
+              type="text"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 mb-2"
+              placeholder="Enter question text"
+            >
+            
+            <!-- Required Question Checkbox -->
+            <div class="flex items-center">
               <input
-                v-model="question.options[optionIndex]"
-                type="text"
-                class="flex-grow px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                placeholder="Enter option"
+                type="checkbox"
+                :id="'required-' + question.id"
+                v-model="question.required"
+                class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
               >
-              <button @click="removeOption(question, optionIndex)" class="ml-2 text-red-500 hover:text-red-700" title="Remove option">
-                <UIcon name="heroicons-outline:x" class="w-5 h-5" />
+              <label :for="'required-' + question.id" class="ml-2 text-sm text-gray-600">
+                Mark as required question
+              </label>
+            </div>
+            
+            <!-- Add this inside the question loop after the question text input -->
+            <div v-if="showConditionOptions(index)" class="mt-2 p-2 bg-gray-100 rounded">
+              <label class="block text-sm font-medium text-gray-700 mb-2">Condition</label>
+              <div class="flex gap-2">
+                <select
+                  v-model="question.condition.questionId"
+                  class="flex-1 px-3 py-2 border border-gray-300 rounded-md"
+                >
+                  <option value="">No condition</option>
+                  <option
+                    v-for="q in getPreviousTrueFalseQuestions(index)"
+                    :key="q.internal_id"
+                    :value="q.internal_id"
+                  >
+                    #{{q.internal_id}} - {{q.text}}
+                  </option>
+                </select>
+                <select
+                  v-if="question.condition.questionId"
+                  v-model="question.condition.expectedAnswer"
+                  class="w-24 px-3 py-2 border border-gray-300 rounded-md"
+                >
+                  <option value="true">True</option>
+                  <option value="false">False</option>
+                </select>
+              </div>
+            </div>
+            <!-- Multiple Choice Options -->
+            <div v-if="question.type === 'MultipleChoice'" class="mt-2">
+              <div v-for="(option, optionIndex) in question.options" :key="optionIndex" class="flex items-center mb-2">
+                <input
+                  v-model="question.options[optionIndex]"
+                  type="text"
+                  class="flex-grow px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  placeholder="Enter option"
+                >
+                <button @click="removeOption(question, optionIndex)" class="ml-2 text-red-500 hover:text-red-700" title="Remove option">
+                  <UIcon name="heroicons-outline:x" class="w-5 h-5" />
+                </button>
+              </div>
+              <button @click="addOption(question)" class="text-indigo-600 hover:text-indigo-800 font-medium">
+                Add Option
               </button>
             </div>
-            <button @click="addOption(question)" class="text-indigo-600 hover:text-indigo-800 font-medium">
-              Add Option
-            </button>
-          </div>
-          <!-- Image Question Upload -->
-          <div v-if="question.type === 'ImageQuestion'" class="mt-2">
-            <div class="flex items-center justify-center w-full">
-              <label class="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
-                <div class="flex flex-col items-center justify-center pt-5 pb-6" v-if="!question.image">
-                  <UIcon name="heroicons-outline:upload" class="w-10 h-10 mb-3 text-gray-400" />
-                  <p class="mb-2 text-sm text-gray-500"><span class="font-semibold">Click to upload</span> or drag and drop</p>
-                  <p class="text-xs text-gray-500">PNG, JPG or GIF (MAX. 800x400px)</p>
-                </div>
-                <div v-else class="relative w-full h-full">
-                  <img :src="question.image" alt="Uploaded image" class="w-full h-full object-cover rounded-lg" />
-                  <button @click.prevent="removeImage(question)" class="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition duration-300">
-                    <UIcon name="heroicons-outline:x" class="w-4 h-4" />
-                  </button>
-                </div>
-                <input type="file" class="hidden" @change="handleImageUpload($event, question)" accept="image/*" />
-              </label>
+            <!-- Image Question Upload -->
+            <div v-if="question.type === 'ImageQuestion'" class="mt-2">
+              <div class="flex items-center justify-center w-full">
+                <label class="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                  <div class="flex flex-col items-center justify-center pt-5 pb-6" v-if="!question.image">
+                    <UIcon name="heroicons-outline:upload" class="w-10 h-10 mb-3 text-gray-400" />
+                    <p class="mb-2 text-sm text-gray-500"><span class="font-semibold">Click to upload</span> or drag and drop</p>
+                    <p class="text-xs text-gray-500">PNG, JPG or GIF (MAX. 800x400px)</p>
+                  </div>
+                  <div v-else class="relative w-full h-full">
+                    <img :src="question.image" alt="Uploaded image" class="w-full h-full object-cover rounded-lg" />
+                    <button @click.prevent="removeImage(question)" class="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition duration-300">
+                      <UIcon name="heroicons-outline:x" class="w-4 h-4" />
+                    </button>
+                  </div>
+                  <input type="file" class="hidden" @change="handleImageUpload($event, question)" accept="image/*" />
+                </label>
+              </div>
             </div>
-          </div>
-          <!-- Reference Image Upload -->
-          <div class="mt-2">
-            <label class="block text-sm font-medium text-gray-700 mb-2">Reference Image</label>
-            <div class="flex items-center justify-center w-full">
-              <label :class="[
-                'flex flex-col items-center justify-center w-full border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100',
-                !question.referenceImage ? 'h-24' : 'h-64' // Smaller height when empty
-              ]">
-                <div class="flex flex-col items-center justify-center py-3" v-if="!question.referenceImage">
-                  <UIcon name="heroicons-outline:upload" class="w-6 h-6 mb-2 text-gray-400" />
-                  <p class="text-sm text-gray-500">Click to upload reference image</p>
-                </div>
-                <div v-else class="relative w-full h-full">
-                  <img :src="question.referenceImage" alt="Uploaded image" class="w-full h-full object-cover rounded-lg" />
-                  <button @click.prevent="removeReferenceImage(question)" class="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition duration-300">
-                    <UIcon name="heroicons-outline:x" class="w-4 h-4" />
-                  </button>
-                </div>
-                <input type="file" class="hidden" @change="handleReferenceImageUpload($event, question)" accept="image/*" />
-              </label>
+            <!-- Reference Image Upload -->
+            <div class="mt-2">
+              <label class="block text-sm font-medium text-gray-700 mb-2">Reference Image</label>
+              <div class="flex items-center justify-center w-full">
+                <label :class="[
+                  'flex flex-col items-center justify-center w-full border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100',
+                  !question.referenceImage ? 'h-24' : 'h-64' // Smaller height when empty
+                ]">
+                  <div class="flex flex-col items-center justify-center py-3" v-if="!question.referenceImage">
+                    <UIcon name="heroicons-outline:upload" class="w-6 h-6 mb-2 text-gray-400" />
+                    <p class="text-sm text-gray-500">Click to upload reference image</p>
+                  </div>
+                  <div v-else class="relative w-full h-full">
+                    <img :src="question.referenceImage" alt="Uploaded image" class="w-full h-full object-cover rounded-lg" />
+                    <button @click.prevent="removeReferenceImage(question)" class="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition duration-300">
+                      <UIcon name="heroicons-outline:x" class="w-4 h-4" />
+                    </button>
+                  </div>
+                  <input type="file" class="hidden" @change="handleReferenceImageUpload($event, question)" accept="image/*" />
+                </label>
+              </div>
             </div>
+            <!-- Likert Scale Points -->
+            <div v-if="question.type === 'LikertScale'" class="mt-2">
+              <label class="block text-sm font-medium text-gray-700 mb-2">Scale Points</label>
+              <input
+                v-model.number="question.scalePoints"
+                type="number"
+                min="2"
+                max="10"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                placeholder="Enter number of scale points"
+              >
+            </div>
+            <!-- For FreeAnswer and TrueFalse, no additional inputs needed -->
           </div>
-          <!-- Likert Scale Points -->
-          <div v-if="question.type === 'LikertScale'" class="mt-2">
-            <label class="block text-sm font-medium text-gray-700 mb-2">Scale Points</label>
-            <input
-              v-model.number="question.scalePoints"
-              type="number"
-              min="2"
-              max="10"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-              placeholder="Enter number of scale points"
-            >
-          </div>
-          <!-- For FreeAnswer and TrueFalse, no additional inputs needed -->
         </li>
       </TransitionGroup>
     </div>
@@ -257,6 +273,7 @@ const addQuestion = (type) => {
     type,
     text: '',
     internal_id: internalIdCounter.value,
+    required: false,  // Add this line
     condition: {
       questionId: '',
       expectedAnswer: 'true'
@@ -329,6 +346,7 @@ const handleSubmit = () => {
     const question = {
       text: q.text,
       type: q.type,
+      required: q.required, // Add this line
       condition: {
         questionId: q.condition.questionId || null,
         expectedAnswer: q.condition.expectedAnswer
@@ -411,6 +429,7 @@ const handlePreview = () => {
         text: q.text,
         type: q.type,
         internal_id: q.internal_id,
+        required: q.required, // Add this line
         condition: {
           questionId: q.condition.questionId || null,
           expectedAnswer: q.condition.expectedAnswer
