@@ -36,7 +36,9 @@
       <TransitionGroup name="list" tag="ul" class="space-y-4">
         <li v-for="(question, index) in formData.questions" :key="question.id" class="bg-gray-50 p-4 rounded-md shadow">
           <div class="flex justify-between items-start mb-2">
-            <h3 class="text-lg font-medium text-gray-800">{{ question.type }} Question</h3>
+            <h3 class="text-lg font-medium text-gray-800">
+              #{{ index + 1 }} - {{ question.type }} Question
+            </h3>
             <button @click="removeQuestion(index)" class="text-red-500 hover:text-red-700" title="Remove question">
               <UIcon name="heroicons-outline:trash" class="w-5 h-5" />
             </button>
@@ -49,6 +51,33 @@
             class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 mb-2"
             placeholder="Enter question text"
           >
+          <!-- Add this inside the question loop after the question text input -->
+          <div v-if="showConditionOptions(index)" class="mt-2 p-2 bg-gray-100 rounded">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Condition</label>
+            <div class="flex gap-2">
+              <select
+                v-model="question.condition.questionId"
+                class="flex-1 px-3 py-2 border border-gray-300 rounded-md"
+              >
+                <option value="">No condition</option>
+                <option
+                  v-for="q in getPreviousTrueFalseQuestions(index)"
+                  :key="q.internal_id"
+                  :value="q.internal_id"
+                >
+                  #{{q.internal_id}} - {{q.text}}
+                </option>
+              </select>
+              <select
+                v-if="question.condition.questionId"
+                v-model="question.condition.expectedAnswer"
+                class="w-24 px-3 py-2 border border-gray-300 rounded-md"
+              >
+                <option value="true">True</option>
+                <option value="false">False</option>
+              </select>
+            </div>
+          </div>
           <!-- Multiple Choice Options -->
           <div v-if="question.type === 'MultipleChoice'" class="mt-2">
             <div v-for="(option, optionIndex) in question.options" :key="optionIndex" class="flex items-center mb-2">
@@ -163,6 +192,11 @@ const addQuestion = (type) => {
     id: Date.now(),
     type,
     text: '',
+    internal_id: formData.questions.length + 1,
+    condition: {
+      questionId: '',
+      expectedAnswer: 'true'
+    }
   };
   
   if (type === 'MultipleChoice') {
@@ -215,6 +249,10 @@ const handleSubmit = () => {
     const question = {
       text: q.text,
       type: q.type,
+      condition: {
+        questionId: q.condition.questionId || null,
+        expectedAnswer: q.condition.expectedAnswer
+      }
     };
     
     if (q.type === 'MultipleChoice') {
@@ -235,6 +273,20 @@ const handleSubmit = () => {
     ...formData,
     questions: sanitizedQuestions
   });
+};
+
+const showConditionOptions = (index) => {
+  return index > 0; // Don't show for first question
+};
+
+const getPreviousTrueFalseQuestions = (currentIndex) => {
+  return formData.questions
+    .slice(0, currentIndex)
+    .filter(q => q.type === 'TrueFalse')
+    .map(q => ({ 
+      ...q, 
+      displayIndex: q.internal_id || formData.questions.indexOf(q) + 1 
+    }));
 };
 </script>
 

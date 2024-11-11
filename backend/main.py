@@ -116,19 +116,25 @@ async def create_survey(survey: SurveyDirectCreate, db=Depends(get_db)):
     questions = []
     images = []
 
-    for row in survey.questions:
-        question = {
-            "text": row.text,
-            "type": row.type,
-        }
+    # Add internal_id to questions
+    for idx, row in enumerate(survey.questions, start=1):
+        question = {"text": row.text, "type": row.type, "internal_id": idx}
+
+        # If there's a condition, it now refers to internal_id directly
+        if row.condition and row.condition.questionId:
+            question["condition"] = {
+                "questionId": int(row.condition.questionId),  # Now using internal_id
+                "expectedAnswer": row.condition.expectedAnswer,
+            }
+
         if question["type"] == "MultipleChoice":
             question["options"] = row.options
         elif question["type"] == "ImageQuestion":
-            question["imageName"] = row.imageName  # Use imageName
+            question["imageName"] = row.imageName
             images.append({"image_name": row.imageName, "image_data": row.image})
         elif question["type"] == "LikertScale":
-            question["scale"] = int(row.scale_points)
-        # For other question types, no additional fields are needed
+            question["scale_points"] = int(row.scale_points)
+
         questions.append(question)
 
     new_survey = Survey(name=survey.title.strip(), questions=questions)
@@ -152,7 +158,10 @@ async def create_survey(survey: SurveyDirectCreate, db=Depends(get_db)):
             db.add(image_record)
         db.commit()
 
-    return {"message": "Survey created successfully"}
+    return {
+        "message": "Survey created successfully",
+        "survey": {"name": new_survey.name, "questions": new_survey.questions},
+    }
 
 
 @app.get("/api/survey/{name}")
@@ -166,22 +175,18 @@ async def get_survey(name: str, db=Depends(get_db)):
     if not survey:
         raise HTTPException(status_code=404, detail="Survey not found")
 
-    # Convert each image's binary data to base64
+    # Add index and ensure internal_id exists
+    for i, question in enumerate(survey.questions):
+        question["index"] = i
+        if "internal_id" not in question:
+            question["internal_id"] = i + 1  # Add internal_id if missing
+
     survey_data = {
         "name": survey.name,
-        "questions": [
-            {
-                **q,
-                # Convert 'scale' to 'scalePoints' for consistency
-                "scalePoints": (
-                    q.get("scale") if q.get("scale") else q.get("scale_points")
-                ),
-            }
-            for q in survey.questions
-        ],
+        "questions": survey.questions,
         "images": [
             {
-                "id": str(image.id),  # UUID as string
+                "id": str(image.id),
                 "name": image.image_name,
                 "data": base64.b64encode(image.image_data).decode("utf-8"),
             }
@@ -264,11 +269,30 @@ async def update_survey(name: str, survey: SurveyDirectCreate, db=Depends(get_db
     # Get existing images
     existing_images = {img.image_name: img for img in existing_survey.images}
 
+    # Preserve existing internal_ids or create new ones
+    existing_internal_ids = {
+        q.get("id"): q.get("internal_id") for q in existing_survey.questions
+    }
+    next_internal_id = (
+        max([q.get("internal_id", 0) for q in existing_survey.questions], default=0) + 1
+    )
+
     for row in survey.questions:
         question = {
             "text": row.text,
             "type": row.type,
+            "id": row.id,
+            "internal_id": existing_internal_ids.get(row.id) or next_internal_id,
         }
+
+        if not existing_internal_ids.get(row.id):
+            next_internal_id += 1
+
+        if row.condition:
+            question["condition"] = {
+                "questionId": row.condition.questionId,
+                "expectedAnswer": row.condition.expectedAnswer,
+            }
 
         if question["type"] == "MultipleChoice":
             question["options"] = row.options

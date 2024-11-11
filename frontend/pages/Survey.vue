@@ -96,11 +96,34 @@ const isLastQuestion = computed(() => currentIndex.value === (survey.value?.ques
 
 const updateAnswer = (index, answer) => {
   answers.value[index] = answer;
+  console.log(answers.value)
 };
 
 const nextQuestion = () => {
-  if (survey.value && currentIndex.value < survey.value.questions.length - 1) {
-    currentIndex.value++;
+  while(true) {
+    if (survey.value && currentIndex.value < survey.value.questions.length - 1) {
+      const nextQuestion = survey.value.questions[currentIndex.value + 1];
+      const condition = nextQuestion.condition;
+      if (condition) {
+        const questionId = condition.questionId;
+        const expectedAnswer = condition.expectedAnswer;
+        const previousQuestionIndex = survey.value.questions.findIndex(
+          (question) => question.internal_id === questionId
+        );
+        const actualAnswer = answers.value[previousQuestionIndex];
+        if (actualAnswer?.toLowerCase() !== expectedAnswer?.toLowerCase()) {
+          currentIndex.value++;
+        } else {
+          currentIndex.value++; 
+          break; 
+        }
+      } else {
+        currentIndex.value++;
+        break;
+      }
+    } else {
+      break;
+    }
   }
 };
 
