@@ -11,7 +11,28 @@
     <div v-else>
       <h1 class="text-3xl font-bold mb-8 text-indigo-800">{{ survey?.name || "Lade Umfrage..." }}</h1>
       
-      <div v-if="currentIndex < (survey?.questions?.length || 0)">
+      <div v-if="showConfirmation">
+        <div class="text-center bg-white rounded-lg shadow-md p-6">
+          <h2 class="text-2xl font-bold mb-4 text-indigo-800">Möchten Sie die Umfrage abschließen?</h2>
+          <p class="text-gray-600 mb-6">Sie haben alle Fragen beantwortet. Klicken Sie auf 'Absenden' um Ihre Antworten zu übermitteln.</p>
+          <div class="flex justify-center space-x-4">
+            <button
+              @click="showConfirmation = false"
+              class="bg-gray-300 text-gray-700 hover:bg-gray-400 transition duration-300 py-2 px-4 rounded-full"
+            >
+              Zurück
+            </button>
+            <button
+              @click="submitSurvey"
+              class="bg-indigo-600 text-white hover:bg-indigo-700 transition duration-300 py-2 px-4 rounded-full"
+            >
+              Absenden
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div v-else-if="currentIndex < (survey?.questions?.length || 0)">
         <!-- Progress Bar -->
         <div class="w-full bg-gray-200 rounded-full h-2.5 mb-8">
           <div
@@ -43,7 +64,7 @@
             class="bg-indigo-600 text-white hover:bg-indigo-700 transition duration-300 py-2 px-4 rounded-full"
             :class="{ 'ml-auto': currentIndex === 0 }"
           >
-            {{ isLastQuestion ? 'Submit' : 'Next' }}
+            {{ isLastQuestion ? 'Review & Submit' : 'Next' }}
           </button>
         </div>
       </div>
@@ -79,6 +100,7 @@ const route = useRoute();
 const router = useRouter();
 const config = useRuntimeConfig();
 const loading = ref(true);
+const showConfirmation = ref(false);
 
 const questionComponents = {
   MultipleChoice,
@@ -95,36 +117,33 @@ const currentQuestion = computed(() => survey.value?.questions?.[currentIndex.va
 const isLastQuestion = computed(() => currentIndex.value === (survey.value?.questions?.length || 1) - 1);
 
 const updateAnswer = (index, answer) => {
+  console.log('Updating answer:', index, answer); // Debug log
   answers.value[index] = answer;
-  console.log(answers.value)
 };
 
 const nextQuestion = () => {
-  while(true) {
-    if (survey.value && currentIndex.value < survey.value.questions.length - 1) {
-      const nextQuestion = survey.value.questions[currentIndex.value + 1];
-      const condition = nextQuestion.condition;
-      if (condition) {
-        const questionId = condition.questionId;
-        const expectedAnswer = condition.expectedAnswer;
-        const previousQuestionIndex = survey.value.questions.findIndex(
-          (question) => question.internal_id === questionId
-        );
-        const actualAnswer = answers.value[previousQuestionIndex];
-        if (actualAnswer?.toLowerCase() !== expectedAnswer?.toLowerCase()) {
-          currentIndex.value++;
-        } else {
-          currentIndex.value++; 
-          break; 
-        }
-      } else {
-        currentIndex.value++;
-        break;
-      }
-    } else {
-      break;
+  let nextIndex = currentIndex.value + 1;
+  while (nextIndex < survey.value.questions.length) {
+    const nextQuestion = survey.value.questions[nextIndex];
+    if (!nextQuestion.condition) {
+      currentIndex.value = nextIndex;
+      return;
     }
+    
+    const conditionQuestion = survey.value.questions.find(
+      q => q.internal_id === nextQuestion.condition.questionId
+    );
+    const conditionQuestionIndex = survey.value.questions.indexOf(conditionQuestion);
+    const answer = answers.value[conditionQuestionIndex];
+    
+    if (answer?.toLowerCase() === nextQuestion.condition.expectedAnswer?.toLowerCase()) {
+      currentIndex.value = nextIndex;
+      return;
+    }
+    nextIndex++;
   }
+  // If we get here, we've reached the end
+  showConfirmation.value = true;
 };
 
 const prevQuestion = () => {
@@ -144,8 +163,7 @@ const submitSurvey = async () => {
       }
     );
     message.value = response.message || 'Ihre Antworten wurden gespeichert.';
-    // Weiter zur Abschlussanzeige
-    currentIndex.value++;
+    currentIndex.value = survey.value.questions.length; // Show completion screen
   } catch (error) {
     console.error(error);
     message.value = error.message || 'Ein Fehler ist aufgetreten';
@@ -154,7 +172,7 @@ const submitSurvey = async () => {
 
 const handleNextOrSubmit = () => {
   if (isLastQuestion.value) {
-    submitSurvey();
+    showConfirmation.value = true;
   } else {
     nextQuestion();
   }
