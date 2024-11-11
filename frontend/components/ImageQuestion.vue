@@ -1,6 +1,7 @@
 <template>
   <div class="image-question">
     <h2 class="text-xl font-semibold mb-4">{{ question.text }}</h2>
+    <!-- Separate image container for fullscreen -->
     <div class="relative fullscreen-container" ref="imageContainer">
       <img
         :src="'data:image/png;base64,' + question.images[0].data"
@@ -11,7 +12,6 @@
         class="max-w-full h-auto rounded-lg shadow-md"
         ref="imageRef"
       />
-      <!-- Remove the marker number label -->
       <div
         v-for="(marker, index) in displayCoordinates"
         :key="index"
@@ -22,31 +22,6 @@
         }"
       >
         <MapPin :class="`w-6 h-6 text-${marker.color}-500`" />
-      </div>
-
-      <!-- Updated marker list with textareas -->
-      <div class="mt-4 space-y-4">
-        <div v-for="(marker, index) in coordinates" :key="index" 
-             class="flex items-start space-x-3 bg-white p-3 rounded-lg shadow-sm">
-          <div class="flex-shrink-0 mt-1">
-            <MapPin :class="`w-5 h-5 text-${availableColors[index].class}-500`" />
-          </div>
-          <div class="flex-grow">
-            <textarea
-              v-model="marker.text"
-              :placeholder="getPlaceholder(index)"
-              class="w-full min-h-[80px] border rounded-md px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-              @input="emitAnswer"
-            ></textarea>
-          </div>
-          <button
-            @click="removeMarker(index)"
-            class="flex-shrink-0 text-red-500 hover:text-red-700 mt-1"
-            title="Markierung entfernen"
-          >
-            <Trash2 class="w-5 h-5" />
-          </button>
-        </div>
       </div>
 
       <!-- Desktop Toolbar -->
@@ -135,7 +110,31 @@
           </button>
         </div>
       </div>
+    </div>
 
+    <!-- Marker list moved outside fullscreen container -->
+    <div class="mt-4 space-y-4">
+      <div v-for="(marker, index) in coordinates" :key="index" 
+           class="flex items-start space-x-3 bg-white p-3 rounded-lg shadow-sm">
+        <div class="flex-shrink-0 mt-1">
+          <MapPin :class="`w-5 h-5 text-${availableColors[index].class}-500`" />
+        </div>
+        <div class="flex-grow">
+          <textarea
+            v-model="marker.text"
+            :placeholder="getPlaceholder(index)"
+            class="w-full min-h-[80px] border rounded-md px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            @input="emitAnswer"
+          ></textarea>
+        </div>
+        <button
+          @click="removeMarker(index)"
+          class="flex-shrink-0 text-red-500 hover:text-red-700 mt-1"
+          title="Markierung entfernen"
+        >
+          <Trash2 class="w-5 h-5" />
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -459,6 +458,9 @@ onUnmounted(() => {
   position: relative;
   width: 100%;
   overflow: visible;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .fullscreen-container:fullscreen {
@@ -469,7 +471,7 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   padding: 0;
-  overflow: visible;
+  overflow: hidden;
 }
 
 .fullscreen-container:fullscreen img {
