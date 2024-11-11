@@ -61,6 +61,10 @@
             :key="`${currentIndex}-${currentQuestion?.internal_id}`"
             @answer="updateAnswer(currentIndex, $event)"
           />
+          <!-- Display reference image if available -->
+          <div v-if="currentQuestion?.referenceImage" class="mt-4">
+            <img :src="'data:image/jpeg;base64,' + currentQuestion.referenceImage" alt="Reference Image" class="w-full h-auto rounded-md" />
+          </div>
         </div>
 
         <div class="flex justify-between">
@@ -256,6 +260,10 @@ onMounted(async () => {
     survey.value = {
       ...response,
       questions: response.questions.map((question) => {
+        // Attach reference image if present
+        if (question.referenceImage) {
+          question.referenceImage = question.referenceImage;
+        }
         if (question.type === 'ImageQuestion') {
           return {
             ...question,

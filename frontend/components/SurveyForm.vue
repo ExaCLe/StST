@@ -112,6 +112,26 @@
               </label>
             </div>
           </div>
+          <!-- Reference Image Upload -->
+          <div class="mt-2">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Reference Image</label>
+            <div class="flex items-center justify-center w-full">
+              <label class="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                <div class="flex flex-col items-center justify-center pt-5 pb-6" v-if="!question.referenceImage">
+                  <UIcon name="heroicons-outline:upload" class="w-10 h-10 mb-3 text-gray-400" />
+                  <p class="mb-2 text-sm text-gray-500"><span class="font-semibold">Click to upload</span> or drag and drop</p>
+                  <p class="text-xs text-gray-500">PNG, JPG or GIF (MAX. 800x400px)</p>
+                </div>
+                <div v-else class="relative w-full h-full">
+                  <img :src="question.referenceImage" alt="Uploaded image" class="w-full h-full object-cover rounded-lg" />
+                  <button @click.prevent="removeReferenceImage(question)" class="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition duration-300">
+                    <UIcon name="heroicons-outline:x" class="w-4 h-4" />
+                  </button>
+                </div>
+                <input type="file" class="hidden" @change="handleReferenceImageUpload($event, question)" accept="image/*" />
+              </label>
+            </div>
+          </div>
           <!-- Likert Scale Points -->
           <div v-if="question.type === 'LikertScale'" class="mt-2">
             <label class="block text-sm font-medium text-gray-700 mb-2">Scale Points</label>
@@ -281,6 +301,21 @@ const removeImage = (question) => {
   question.imageName = '';
 };
 
+const handleReferenceImageUpload = (event, question) => {
+  const file = event.target.files[0];
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    question.referenceImage = e.target.result;
+    question.referenceImageName = file.name;
+  };
+  reader.readAsDataURL(file);
+};
+
+const removeReferenceImage = (question) => {
+  question.referenceImage = null;
+  question.referenceImageName = '';
+};
+
 const handleSubmit = () => {
   if (!formData.adminPassword || !formData.surveyTitle || formData.questions.length === 0) {
     alert('Admin password, survey title, and at least one question are required');
@@ -308,6 +343,10 @@ const handleSubmit = () => {
       }
     } else if (q.type === 'LikertScale') {
       question.scale_points = parseInt(q.scalePoints) || 5;
+    }
+    // Include reference image if present
+    if (q.referenceImage) {
+      question.referenceImage = q.referenceImage;
     }
     return question;
   });
@@ -384,14 +423,30 @@ const handlePreview = () => {
       } else if (q.type === 'LikertScale') {
         question.scale_points = parseInt(q.scalePoints) || 5;
       }
+      // Include reference image if present
+      if (q.referenceImage) {
+        question.referenceImage = q.referenceImage;
+      }
       return question;
     }),
     images: formData.questions
-      .filter(q => q.type === 'ImageQuestion' && q.image)
-      .map(q => ({
-        name: q.imageName,
-        data: q.image.split(',')[1] // Remove data URL prefix
-      }))
+      .filter(q => (q.type === 'ImageQuestion' && q.image) || q.referenceImage)
+      .flatMap(q => {
+        const images = [];
+        if (q.type === 'ImageQuestion' && q.image) {
+          images.push({
+            name: q.imageName,
+            data: q.image.split(',')[1] // Remove data URL prefix
+          });
+        }
+        if (q.referenceImage) {
+          images.push({
+            name: `question_${q.internal_id}_reference`,
+            data: q.referenceImage.split(',')[1]
+          });
+        }
+        return images;
+      })
   };
   
   emit('preview', previewData);
