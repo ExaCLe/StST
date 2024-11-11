@@ -115,10 +115,10 @@
 
     <!-- Marker list moved outside fullscreen container -->
     <div class="mt-4 space-y-4">
-      <div v-for="(marker, index) in coordinates" :key="index" 
+      <div v-for="(marker, index) in coordinates" :key="marker.id" 
            class="flex items-start space-x-3 bg-white p-3 rounded-lg shadow-sm">
         <div class="flex-shrink-0 mt-1">
-          <MapPin :class="`w-5 h-5 text-${availableColors[index].class}-500`" />
+          <MapPin :class="`w-5 h-5 text-${marker.colorClass}-500`" />
         </div>
         <div class="flex-grow">
           <textarea
@@ -164,6 +164,8 @@ const currentImageWidth = ref(0);
 const currentImageHeight = ref(0);
 const isMobile = ref(false);
 
+let nextMarkerId = 0;
+
 const availableColors = [
   { name: 'blaue', class: 'blue' },    // #3B82F6
   { name: 'rote', class: 'red' },      // #EF4444
@@ -177,10 +179,10 @@ const displayCoordinates = computed(() => {
   fullscreenTrigger.value;
   if (!imageRef.value) return [];
 
-  return coordinates.value.map((coord, index) => ({
+  return coordinates.value.map(coord => ({
     x: (coord.x / originalImageDimensions.value.width) * currentImageWidth.value,
     y: (coord.y / originalImageDimensions.value.height) * currentImageHeight.value,
-    color: availableColors[index].class,
+    color: coord.colorClass,
     text: coord.text
   }));
 });
@@ -223,8 +225,15 @@ const setToolbarPosition = () => {
 
 const handleClick = event => {
   if (currentTool.value !== 'stamp') return;
-  if (coordinates.value.length >= availableColors.length) return;
-
+  
+  // Check all colors, including previously used ones that are now available
+  const availableColor = availableColors.find(color => {
+    const isUsed = coordinates.value.some(marker => marker.colorClass === color.class);
+    return !isUsed;
+  });
+  
+  if (!availableColor) return; // No colors left
+  
   const rect = imageRef.value.getBoundingClientRect();
 
   if (!isFullScreen.value) {
@@ -240,7 +249,14 @@ const handleClick = event => {
       y >= 0 &&
       y <= originalImageDimensions.value.height
     ) {
-      coordinates.value.push({ x, y, text: '' });
+      coordinates.value.push({ 
+        id: nextMarkerId++,
+        x, 
+        y, 
+        text: '',
+        colorClass: availableColor.class,
+        colorName: availableColor.name
+      });
       emitAnswer();
     }
   } else {
@@ -265,7 +281,14 @@ const handleClick = event => {
       y >= 0 &&
       y <= originalImageDimensions.value.height
     ) {
-      coordinates.value.push({ x, y, text: '' });
+      coordinates.value.push({ 
+        id: nextMarkerId++,
+        x, 
+        y, 
+        text: '',
+        colorClass: availableColor.class,
+        colorName: availableColor.name
+      });
       emitAnswer();
     }
   }
@@ -277,6 +300,7 @@ const setTool = tool => {
 
 const removeMarker = index => {
   if (currentTool.value === 'eraser' || currentTool.value === 'stamp') {
+    const marker = coordinates.value[index];
     coordinates.value.splice(index, 1);
     emitAnswer();
   }
@@ -421,10 +445,10 @@ const stopDragging = () => {
 };
 
 const emitAnswer = () => {
-  emit('answer', coordinates.value.map((coord, index) => ({
+  emit('answer', coordinates.value.map(coord => ({
     x: coord.x,
     y: coord.y,
-    color: availableColors[index].class,
+    color: coord.colorClass,
     text: coord.text
   })));
 };
@@ -433,7 +457,7 @@ const getPlaceholder = (index) => {
   if (props.question.markerLabels?.[index]) {
     return props.question.markerLabels[index];
   }
-  return `Notizen für ${availableColors[index].name} Markierung`;
+  return `Notizen für ${coordinates.value[index].colorName} Markierung`;
 };
 
 const handleMarkerClick = (index) => {
@@ -444,7 +468,19 @@ const handleMarkerClick = (index) => {
 };
 
 onMounted(() => {
-  coordinates.value = props.initialAnswer || [];
+  if (props.initialAnswer) {
+    nextMarkerId = props.initialAnswer.length;
+    coordinates.value = props.initialAnswer.map((answer, index) => ({
+      id: index,
+      x: answer.x,
+      y: answer.y,
+      text: answer.text,
+      colorClass: answer.color,
+      colorName: availableColors.find(c => c.class === answer.color)?.name
+    }));
+  } else {
+    coordinates.value = [];
+  }
   document.addEventListener('fullscreenchange', handleFullScreenChange);
 
   isMobile.value = /Mobi|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
