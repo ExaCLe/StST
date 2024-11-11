@@ -8,7 +8,7 @@ from fastapi import FastAPI, File, UploadFile, Form, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, joinedload
 from models import Base, Survey, Response, Image
 from database import get_db
 from schemas import SurveyCreate, ResponseCreate, SurveyDirectCreate
@@ -16,7 +16,6 @@ import csv
 from email.mime.text import MIMEText
 import smtplib
 import base64
-from sqlalchemy.orm import joinedload  # Import for eager loading
 
 from survey_processing import create_results_package
 
@@ -134,6 +133,15 @@ async def create_survey(survey: SurveyDirectCreate, db=Depends(get_db)):
             images.append({"image_name": row.imageName, "image_data": row.image})
         elif question["type"] == "LikertScale":
             question["scale_points"] = int(row.scale_points)
+        # Add support for additional image per question
+        if row.referenceImage:
+            images.append(
+                {
+                    "image_name": f"question_{idx}_reference",
+                    "image_data": row.referenceImage,
+                }
+            )
+            question["referenceImageName"] = f"question_{idx}_reference"
 
         questions.append(question)
 
@@ -175,11 +183,22 @@ async def get_survey(name: str, db=Depends(get_db)):
     if not survey:
         raise HTTPException(status_code=404, detail="Survey not found")
 
+    # Create a mapping of image names to image data
+    image_map = {
+        image.image_name: base64.b64encode(image.image_data).decode("utf-8")
+        for image in survey.images
+    }
+
     # Add index and ensure internal_id exists
     for i, question in enumerate(survey.questions):
         question["index"] = i
         if "internal_id" not in question:
             question["internal_id"] = i + 1  # Add internal_id if missing
+        # Attach reference image data if present
+        if "referenceImageName" in question:
+            image_name = question["referenceImageName"]
+            if image_name in image_map:
+                question["referenceImage"] = image_map[image_name]
 
     survey_data = {
         "name": survey.name,
@@ -284,6 +303,15 @@ async def update_survey(name: str, survey: SurveyDirectCreate, db=Depends(get_db
             images.append({"image_name": row.imageName, "image_data": row.image})
         elif question["type"] == "LikertScale":
             question["scale_points"] = int(row.scale_points)
+        # Add support for additional image per question
+        if row.referenceImage:
+            images.append(
+                {
+                    "image_name": f"question_{idx}_reference",
+                    "image_data": row.referenceImage,
+                }
+            )
+            question["referenceImageName"] = f"question_{idx}_reference"
 
         questions.append(question)
 
@@ -297,6 +325,7 @@ async def update_survey(name: str, survey: SurveyDirectCreate, db=Depends(get_db
     # Add new images
     if images:
         for image in images:
+            print(image)
             image_data = image["image_data"]
             # Remove the data URL prefix if present
             if image_data.startswith("data:image"):

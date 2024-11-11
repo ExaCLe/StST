@@ -38,6 +38,8 @@ class Question(BaseModel):
     scale_points: Optional[int] = None
     imageName: Optional[str] = None
     markerLabels: Optional[List[str]] = None  # Add this for image marker labels
+    referenceImage: Optional[str] = None  # Add this for reference images
+    referenceImageName: Optional[str] = None  # Add this for reference image names
 
 
 class SurveyDirectCreate(BaseModel):
