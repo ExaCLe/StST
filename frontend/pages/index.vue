@@ -105,6 +105,13 @@
   </div>
 </template>
 
+<script setup>
+// Remove the 'nuxt-color-mode' entry from local storage
+if (typeof window !== 'undefined') {
+  localStorage.removeItem('nuxt-color-mode');
+}
+</script>
+
 <style>
 .animate-blob {
   animation: blob 7s infinite;

@@ -146,6 +146,12 @@ const questionComponents = {
   ImageQuestion,
 };
 
+// Remove the 'nuxt-color-mode' entry from local storage
+if (typeof window !== 'undefined') {
+  localStorage.removeItem('nuxt-color-mode');
+}
+
+
 const getComponent = (type) => questionComponents[type] || null;
 
 const currentQuestion = computed(() => survey.value?.questions?.[currentIndex.value]);
