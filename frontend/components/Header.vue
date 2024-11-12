@@ -54,6 +54,12 @@
                   <UIcon name="i-heroicons-trash" />
                   <span>Umfrage Löschen</span>
                 </NuxtLink>
+                <NuxtLink 
+                  to="/admin/ResetSurveyResults" 
+                  class="flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-500 hover:text-white">
+                  <UIcon name="i-heroicons-arrow-path" />
+                  <span>Ergebnisse Zurücksetzen</span>
+                </NuxtLink>
               </div>
             </div>
           </div>
@@ -104,6 +110,12 @@
                 class="flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-500 hover:text-white">
                 <UIcon name="i-heroicons-trash" />
                 <span>Umfrage Löschen</span>
+              </NuxtLink>
+              <NuxtLink 
+                to="/admin/ResetSurveyResults" 
+                class="flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-500 hover:text-white">
+                <UIcon name="i-heroicons-arrow-path" />
+                <span>Ergebnisse Zurücksetzen</span>
               </NuxtLink>
             </div>
           </div>
