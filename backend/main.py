@@ -4,7 +4,7 @@ load_dotenv()
 
 
 import os
-from fastapi import FastAPI, File, UploadFile, Form, HTTPException, Depends
+from fastapi import FastAPI, File, UploadFile, Form, HTTPException, Depends, Query
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List
 from sqlalchemy import create_engine
@@ -349,3 +349,21 @@ async def update_survey(name: str, survey: SurveyDirectCreate, db=Depends(get_db
 
     db.commit()
     return {"message": "Survey updated successfully"}
+
+
+@app.delete("/api/reset-survey-results/{name}")
+async def reset_survey_results(
+    name: str, password: str = Query(...), db=Depends(get_db)
+):
+    if password != os.getenv("ADMIN_PASSWORD"):
+        raise HTTPException(status_code=403, detail="Invalid password")
+
+    survey = db.query(Survey).filter(Survey.name == name).first()
+    if not survey:
+        raise HTTPException(status_code=404, detail="Survey not found")
+
+    # Delete all responses associated with the survey
+    db.query(Response).filter(Response.survey_id == survey.id).delete()
+    db.commit()
+
+    return {"message": f"All results for survey '{name}' have been reset successfully"}

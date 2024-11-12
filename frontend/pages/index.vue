@@ -64,6 +64,12 @@
                   <span class="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform">→</span>
                 </span>
               </NuxtLink>
+              <NuxtLink to="/admin/ResetSurveyResults" class="block group">
+                <span class="inline-flex items-center text-sm font-medium">
+                  Ergebnisse zurücksetzen
+                  <span class="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform">→</span>
+                </span>
+              </NuxtLink>
             </div>
             <p class="mt-4 text-xs text-white text-opacity-80">
               Hinweis: Admin-Passwort erforderlich für den Zugriff
