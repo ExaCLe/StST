@@ -4,6 +4,9 @@
 
 <script setup>
 // No additional script setup needed
+if (typeof window !== 'undefined') {
+  localStorage.removeItem('nuxt-color-mode');
+}
 </script>
 
 <style scoped>
