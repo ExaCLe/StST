@@ -151,7 +151,6 @@ if (typeof window !== 'undefined') {
   localStorage.removeItem('nuxt-color-mode');
 }
 
-
 const getComponent = (type) => questionComponents[type] || null;
 
 const currentQuestion = computed(() => survey.value?.questions?.[currentIndex.value]);
@@ -159,7 +158,6 @@ const currentQuestion = computed(() => survey.value?.questions?.[currentIndex.va
 const isLastQuestion = computed(() => currentIndex.value === (survey.value?.questions?.length || 1) - 1);
 
 const updateAnswer = (index, answer) => {
-  console.log('Updating answer:', index, answer); // Debug log
   answers.value[index] = answer;
 };
 
@@ -312,7 +310,7 @@ const isCurrentQuestionAnswered = computed(() => {
     case 'MultipleChoice':
       return Array.isArray(answer) ? answer.length > 0 : !!answer;
     case 'TrueFalse':
-      return answer === true || answer === false;
+      return answer === "True" || answer === "False";
     case 'FreeAnswer':
       return !!answer && answer.trim().length > 0;
     case 'LikertScale':
