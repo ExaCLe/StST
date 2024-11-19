@@ -13,8 +13,11 @@
       </div>
     </div>
     
+    <div v-if="loading" class="text-center">
+      <p>Loading preview...</p>
+    </div>
     <Survey 
-      v-if="surveyData"
+      v-else-if="surveyData"
       :survey="surveyData"
       :preview-mode="true"
     />
@@ -30,13 +33,20 @@ import { useSurveyPreview } from '~/composables/useSurveyPreview';
 import Survey from '~/pages/Survey.vue';
 
 const surveyData = ref(null);
+const loading = ref(true);
 const { getPreviewData, clearPreviewData } = useSurveyPreview();
 
-onMounted(() => {
-  surveyData.value = getPreviewData();
+onMounted(async () => {
+  try {
+    surveyData.value = await getPreviewData();
+  } catch (e) {
+    console.error('Error loading preview:', e);
+  } finally {
+    loading.value = false;
+  }
 });
 
-onUnmounted(() => {
-  clearPreviewData();
+onUnmounted(async () => {
+  await clearPreviewData();
 });
 </script>
