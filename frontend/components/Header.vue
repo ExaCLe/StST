@@ -60,6 +60,12 @@
                   <UIcon name="i-heroicons-arrow-path" />
                   <span>Ergebnisse Zurücksetzen</span>
                 </NuxtLink>
+                <NuxtLink 
+                  to="/admin/DuplicateSurvey" 
+                  class="flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-500 hover:text-white">
+                  <UIcon name="i-heroicons-document-duplicate" />
+                  <span>Umfrage Duplizieren</span>
+                </NuxtLink>
               </div>
             </div>
           </div>
@@ -116,6 +122,12 @@
                 class="flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-500 hover:text-white">
                 <UIcon name="i-heroicons-arrow-path" />
                 <span>Ergebnisse Zurücksetzen</span>
+              </NuxtLink>
+              <NuxtLink 
+                to="/admin/DuplicateSurvey" 
+                class="flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-500 hover:text-white">
+                <UIcon name="i-heroicons-document-duplicate" />
+                <span>Umfrage Duplizieren</span>
               </NuxtLink>
             </div>
           </div>
