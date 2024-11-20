@@ -367,3 +367,45 @@ async def reset_survey_results(
     db.commit()
 
     return {"message": f"All results for survey '{name}' have been reset successfully"}
+
+
+@app.post("/api/duplicate-survey/{name}")
+async def duplicate_survey(
+    name: str, password: str = Form(...), new_name: str = Form(...), db=Depends(get_db)
+):
+    if password != os.getenv("ADMIN_PASSWORD"):
+        raise HTTPException(status_code=403, detail="Invalid password")
+
+    # Get original survey
+    original_survey = (
+        db.query(Survey)
+        .options(joinedload(Survey.images))
+        .filter(Survey.name == name)
+        .first()
+    )
+    if not original_survey:
+        raise HTTPException(status_code=404, detail="Survey not found")
+
+    # Check if new name already exists
+    existing_survey = db.query(Survey).filter(Survey.name == new_name).first()
+    if existing_survey:
+        raise HTTPException(
+            status_code=400, detail="A survey with this name already exists"
+        )
+
+    # Create new survey with copied questions
+    new_survey = Survey(name=new_name, questions=original_survey.questions.copy())
+    db.add(new_survey)
+    db.flush()  # Flush to get the new survey ID
+
+    # Copy images
+    for image in original_survey.images:
+        new_image = Image(
+            survey_id=new_survey.id,
+            image_data=image.image_data,
+            image_name=image.image_name,
+        )
+        db.add(new_image)
+
+    db.commit()
+    return {"message": f"Survey '{name}' duplicated successfully as '{new_name}'"}
